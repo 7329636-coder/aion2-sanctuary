@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AION2 레기온 푸딩 / 지배 · 성역 모집</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <img src="assets/brand/aion2-logo.png" alt="AION2" class="brand-logo" />
+        <div class="brand-copy">
+          <strong>레기온 푸딩 / 지배</strong>
+          <span>성역 파티 모집</span>
+        </div>
+      </div>
+      <nav class="nav-tabs" aria-label="주요 메뉴">
+        <button class="nav-tab active" data-view="recruit">성역 모집</button>
+        <button class="nav-tab" data-view="characters">내 캐릭터</button>
+        <button class="nav-tab" data-view="applications">내 신청</button>
+      </nav>
+      <div class="top-actions">
+        <button class="icon-btn" title="알림">🔔</button>
+        <button class="profile-btn">데바수호자 ▾</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-title-wrap">
+          <img src="assets/brand/sanctuary-icon.png" class="hero-icon" alt="성역 아이콘" />
+          <div>
+            <h1>성역 모집</h1>
+            <p>오늘 같이 갈 성역을 확인하고, 원하는 캐릭터로 바로 신청하세요.</p>
+          </div>
+        </div>
+        <button class="primary-btn create-recruit-btn">+ 모집 만들기</button>
+      </section>
+
+      <section class="dungeon-grid" aria-label="성역 선택">
+        <button class="dungeon-card" data-filter="루드라" style="--bg:url('assets/dungeons/rudra.png')">
+          <div class="card-overlay"></div>
+          <div class="card-content">
+            <span class="eyebrow">SANCTUARY</span>
+            <h2>루드라</h2>
+            <p><b id="count-rudra">2</b>건 모집 중</p>
+          </div>
+          <span class="card-arrow">→</span>
+        </button>
+
+        <button class="dungeon-card" data-filter="침식" style="--bg:url('assets/dungeons/erosion.png')">
+          <div class="card-overlay"></div>
+          <div class="card-content">
+            <span class="eyebrow">SANCTUARY</span>
+            <h2>침식</h2>
+            <p><b id="count-erosion">1</b>건 모집 중</p>
+          </div>
+          <span class="card-arrow">→</span>
+        </button>
+
+        <button class="dungeon-card" data-filter="무스펠 보통" style="--bg:url('assets/dungeons/muspel.png')">
+          <div class="card-overlay"></div>
+          <div class="card-content">
+            <span class="difficulty normal">보통</span>
+            <h2>무스펠</h2>
+            <p><b id="count-muspel-normal">1</b>건 모집 중</p>
+          </div>
+          <span class="card-arrow">→</span>
+        </button>
+
+        <button class="dungeon-card hard-card" data-filter="무스펠 어려움" style="--bg:url('assets/dungeons/muspel.png')">
+          <div class="card-overlay"></div>
+          <div class="card-content">
+            <span class="difficulty hard">어려움</span>
+            <h2>무스펠</h2>
+            <p><b id="count-muspel-hard">1</b>건 모집 중</p>
+          </div>
+          <span class="card-arrow">→</span>
+        </button>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="panel recruit-panel">
+          <div class="panel-head">
+            <div>
+              <h3>현재 모집 중</h3>
+              <p>참여할 파티를 선택하세요.</p>
+            </div>
+            <div class="filters" id="filters">
+              <button class="filter active" data-filter="전체">전체</button>
+              <button class="filter" data-filter="루드라">루드라</button>
+              <button class="filter" data-filter="침식">침식</button>
+              <button class="filter" data-filter="무스펠 보통">무스펠 보통</button>
+              <button class="filter" data-filter="무스펠 어려움">무스펠 어려움</button>
+            </div>
+          </div>
+          <div id="recruit-list" class="recruit-list"></div>
+        </div>
+
+        <aside class="side-stack">
+          <div class="panel side-panel">
+            <div class="panel-head compact">
+              <div>
+                <h3>내 캐릭터</h3>
+                <p>신청할 캐릭터를 선택할 수 있습니다.</p>
+              </div>
+              <button class="text-btn" id="manage-characters">관리</button>
+            </div>
+            <div id="character-list" class="character-list"></div>
+            <button class="outline-btn full" id="add-character">+ 캐릭터 추가</button>
+          </div>
+
+          <div class="panel side-panel">
+            <div class="panel-head compact">
+              <div>
+                <h3>최근 활동</h3>
+                <p>신청·취소 기록</p>
+              </div>
+            </div>
+            <div id="activity-list" class="activity-list"></div>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="modal-close" id="modal-close" aria-label="닫기">×</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <template id="join-template">
+    <div>
+      <span class="modal-eyebrow">파티 참여</span>
+      <h2 id="modal-title">캐릭터 선택</h2>
+      <p class="modal-desc">이 파티에 참여할 캐릭터를 선택하세요.</p>
+      <div id="join-character-options" class="join-options"></div>
+      <div class="modal-actions">
+        <button class="ghost-btn" data-modal-cancel>취소</button>
+        <button class="primary-btn" id="confirm-join">참여하기</button>
+      </div>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
