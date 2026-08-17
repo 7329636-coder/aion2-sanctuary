@@ -939,3 +939,67 @@ body::before { display: none; }
 @media (max-width: 860px) {
   .recruit-note-block { min-width: 0; width: 100%; }
 }
+
+
+/* v12 참여 목록 */
+.participant-preview-btn {
+  margin-top: 8px;
+  align-self: start;
+  border: 1px solid #d8e2ec;
+  background: #ffffff;
+  color: #587290;
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.participant-preview-btn:hover { background: #f5f8fb; }
+.participant-list-wrap {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.participant-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e5eaf0;
+  background: #fbfcfd;
+  border-radius: 12px;
+}
+.participant-copy {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+}
+.participant-copy strong {
+  color: #1d2731;
+  font-size: 14px;
+}
+.participant-copy span {
+  color: #73808e;
+  font-size: 13px;
+}
+.participant-me {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #eef4fa;
+  color: #47709a;
+  font-size: 12px;
+  font-weight: 800;
+}
+.participant-empty {
+  padding: 18px 16px;
+  border: 1px dashed #dbe3ec;
+  border-radius: 12px;
+  background: #fbfcfd;
+  color: #74808f;
+  text-align: center;
+}

@@ -35,6 +35,19 @@ const state = {
   currentView: 'recruit',
 };
 
+function syncRecruitParticipants() {
+  state.recruits.forEach(recruit => {
+    if (!Array.isArray(recruit.participants)) recruit.participants = [];
+    const app = state.applications[recruit.id];
+    if (app && !recruit.participants.some(p => p.characterId === app.characterId)) {
+      recruit.participants.push({ characterId: app.characterId, characterName: app.characterName, className: app.className, at: app.at || Date.now() });
+    }
+    recruit.current = recruit.participants.length;
+  });
+}
+
+syncRecruitParticipants();
+
 function load(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
@@ -102,8 +115,9 @@ function renderRecruits() {
 
   list.innerHTML = rows.map(r => {
     const app = state.applications[r.id];
+    const participantCount = Array.isArray(r.participants) ? r.participants.length : (r.current || 0);
     const dateText = r.date ? `${escapeHtml(formatDateKo(r.date))} · ${escapeHtml(r.time)}` : escapeHtml(r.time);
-    const memoText = r.memo ? escapeHtml(r.memo).replace(/\n/g, '<br>') : '메모가 없습니다.';
+    const memoText = r.memo ? escapeHtml(r.memo).split('\n').join('<br>') : '메모가 없습니다.';
     return `<article class="recruit-item simple-recruit-item white-recruit-item ${getRecruitThemeClass(r.dungeon)}">
       <div class="recruit-title">
         <img class="thumb" src="${DUNGEON_IMAGE[r.dungeon]}" alt="${escapeHtml(r.dungeon)}" />
@@ -114,7 +128,8 @@ function renderRecruits() {
       </div>
       <div class="recruit-meta compact-meta">
         <span class="label">현재 인원</span>
-        <strong>${r.current}/${r.max}명</strong>
+        <strong>${participantCount}/${r.max}명</strong>
+        <button class="participant-preview-btn" data-participants="${r.id}">참여 목록 ${participantCount}명</button>
       </div>
       <div class="recruit-note-block">
         <span class="label">메모</span>
@@ -130,6 +145,7 @@ function renderRecruits() {
   list.querySelectorAll('[data-join]').forEach(btn => btn.addEventListener('click', () => openJoin(btn.dataset.join)));
   list.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', () => cancelJoin(btn.dataset.cancel)));
   list.querySelectorAll('[data-delete-recruit]').forEach(btn => btn.addEventListener('click', () => deleteRecruit(btn.dataset.deleteRecruit)));
+  list.querySelectorAll('[data-participants]').forEach(btn => btn.addEventListener('click', () => openParticipantList(btn.dataset.participants)));
   list.querySelector('.add-recruit-inline')?.addEventListener('click', openRecruitModal);
 }
 
@@ -215,6 +231,29 @@ function renderApplicationsPage() {
   </article>`).join('');
 
   wrap.querySelectorAll('[data-cancel-app]').forEach(btn => btn.addEventListener('click', () => cancelJoin(btn.dataset.cancelApp)));
+}
+
+function openParticipantList(recruitId) {
+  const recruit = state.recruits.find(r => r.id === recruitId);
+  if (!recruit) return;
+  const participants = Array.isArray(recruit.participants) ? recruit.participants : [];
+  const participantHtml = participants.length
+    ? participants.map(p => `<div class="participant-row">
+        <img class="class-icon" src="${CLASSES[p.className]}" alt="${escapeHtml(p.className)}" />
+        <div class="participant-copy">
+          <strong>${escapeHtml(p.characterName)}</strong>
+          <span>${escapeHtml(p.className)}</span>
+        </div>
+        ${state.applications[recruit.id]?.characterId === p.characterId ? '<span class="participant-me">나</span>' : ''}
+      </div>`).join('')
+    : `<div class="participant-empty">아직 참여한 캐릭터가 없습니다.</div>`;
+
+  openModal(`<span class="modal-eyebrow">${escapeHtml(recruit.dungeon)}</span>
+    <h2 id="modal-title">참여 목록</h2>
+    <p class="modal-desc">현재 ${participants.length}/${recruit.max}명이 참여 중입니다.</p>
+    <div class="participant-list-wrap">${participantHtml}</div>
+    <div class="modal-actions"><button class="ghost-btn" data-modal-cancel>닫기</button></div>`);
+  modalContent.querySelector('[data-modal-cancel]').addEventListener('click', closeModal);
 }
 
 function getRecruitThemeClass(dungeon) {
@@ -347,8 +386,13 @@ function confirmJoin() {
   const character = state.characters.find(c => c.id === input.value);
   const recruit = state.recruits.find(r => r.id === state.selectedRecruit);
   if (!character || !recruit || recruit.current >= recruit.max) return;
-  state.applications[recruit.id] = { characterId: character.id, characterName: character.name, className: character.className, at: Date.now() };
-  recruit.current += 1;
+  const joinedAt = Date.now();
+  state.applications[recruit.id] = { characterId: character.id, characterName: character.name, className: character.className, at: joinedAt };
+  if (!Array.isArray(recruit.participants)) recruit.participants = [];
+  if (!recruit.participants.some(p => p.characterId === character.id)) {
+    recruit.participants.push({ characterId: character.id, characterName: character.name, className: character.className, at: joinedAt });
+  }
+  recruit.current = recruit.participants.length;
   state.activities.unshift({ text: `${character.name}님이 ${recruit.dungeon} 파티에 참여했습니다.`, time: '방금 전' });
   save(); closeModal(); render(); showToast(`${character.name} 캐릭터로 신청했습니다.`);
 }
@@ -358,7 +402,9 @@ function cancelJoin(recruitId) {
   const recruit = state.recruits.find(r => r.id === recruitId);
   if (!app || !recruit) return;
   delete state.applications[recruitId];
-  recruit.current = Math.max(0, recruit.current - 1);
+  if (!Array.isArray(recruit.participants)) recruit.participants = [];
+  recruit.participants = recruit.participants.filter(p => p.characterId !== app.characterId);
+  recruit.current = recruit.participants.length;
   state.activities.unshift({ text: `${app.characterName}님이 ${recruit.dungeon} 파티 참여를 취소했습니다.`, time: '방금 전' });
   save(); render(); showToast('참여를 취소했습니다.');
 }
