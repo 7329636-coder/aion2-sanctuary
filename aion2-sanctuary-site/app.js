@@ -373,13 +373,11 @@ function clearRecruitDraft() {
 
 function openRecruitModal() {
   const dungeonOptions = ['루드라','침식','무스펠 보통','무스펠 어려움'].map(d => `<option value="${d}">${d}</option>`).join('');
-  const timeOptions = [];
-  for (let hour = 1; hour <= 23; hour++) {
+  const hourOptions = ['<option value="">시 선택</option>'];
+  for (let hour = 1; hour <= 24; hour++) {
     const hh = String(hour).padStart(2, '0');
-    timeOptions.push(`<option value="${hh}:00">${hh}:00</option>`);
-    timeOptions.push(`<option value="${hh}:30">${hh}:30</option>`);
+    hourOptions.push(`<option value="${hh}">${hh}시</option>`);
   }
-  timeOptions.push('<option value="24:00">24:00</option>');
 
   openModal(`<span class="modal-eyebrow">새 모집</span><h2 id="modal-title">성역 모집 만들기</h2><p class="modal-desc">성역, 날짜, 시간, 메모만 입력하면 됩니다.</p><div class="draft-note">작성 내용은 자동으로 임시 저장됩니다. 화면을 잘못 닫아도 다시 열면 그대로 남아 있습니다.</div><div class="form-grid single-column-form recruit-simple-form">
     <div class="field"><label>성역 선택</label><select id="new-dungeon">${dungeonOptions}</select></div>
@@ -396,24 +394,37 @@ function openRecruitModal() {
       </div>
       <div class="selected-date-preview" id="selected-date-preview">날짜를 선택해주세요.</div>
     </div>
-    <div class="field">
+    <div class="field time-field-v8">
       <label>시간 선택</label>
-      <div class="time-select-wrap">
-        <span class="time-icon">◷</span>
-        <select id="new-time">
-          <option value="">시간을 선택해주세요</option>
-          ${timeOptions.join('')}
-        </select>
+      <div class="quick-time-row">
+        <button type="button" class="quick-time-btn" data-time="20:00">20:00</button>
+        <button type="button" class="quick-time-btn" data-time="21:00">21:00</button>
+        <button type="button" class="quick-time-btn" data-time="22:00">22:00</button>
+        <button type="button" class="quick-time-btn" data-time="23:00">23:00</button>
+        <button type="button" class="quick-time-btn" data-time="24:00">24:00</button>
       </div>
-      <div class="time-help">24시간 표기 · 30분 단위 (01:00 ~ 24:00)</div>
+      <div class="time-direct-label">다른 시간</div>
+      <div class="time-direct-row">
+        <select id="new-hour" aria-label="시">${hourOptions.join('')}</select>
+        <div class="minute-buttons" aria-label="분">
+          <button type="button" class="minute-btn active" data-minute="00">00분</button>
+          <button type="button" class="minute-btn" data-minute="30">30분</button>
+        </div>
+      </div>
+      <input id="new-time" type="hidden" />
+      <div class="selected-time-preview" id="selected-time-preview">시간을 선택해주세요.</div>
     </div>
-    <div class="field field-full"><label>메모</label><textarea id="new-memo" rows="5" placeholder="모집할 때 필요한 내용을 적어주세요.
-예: 초보 환영 / 22시 출발 / 편하게 오세요"></textarea></div>
+    <div class="field field-full"><label>메모</label><textarea id="new-memo" rows="5" placeholder="모집할 때 필요한 내용을 적어주세요.\n예: 초보 환영 / 22시 출발 / 편하게 오세요"></textarea></div>
   </div><div class="modal-actions"><button class="ghost-btn" data-modal-cancel>닫기</button><button class="primary-btn" id="save-recruit">등록하기</button></div>`);
 
   const dateInput = modalContent.querySelector('#new-date');
   const datePreview = modalContent.querySelector('#selected-date-preview');
+  const timeInput = modalContent.querySelector('#new-time');
+  const timePreview = modalContent.querySelector('#selected-time-preview');
+  const hourSelect = modalContent.querySelector('#new-hour');
   const today = new Date();
+  let selectedMinute = '00';
+
   const toDateValue = d => {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -432,9 +443,41 @@ function openRecruitModal() {
     });
   };
 
+  const updateTimeUI = () => {
+    timePreview.textContent = timeInput.value ? `선택 시간  ${timeInput.value}` : '시간을 선택해주세요.';
+    timePreview.classList.toggle('has-value', !!timeInput.value);
+    modalContent.querySelectorAll('.quick-time-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.time === timeInput.value));
+  };
+
+  const setTime = value => {
+    timeInput.value = value;
+    if (value) {
+      const [hh, mm] = value.split(':');
+      hourSelect.value = hh;
+      selectedMinute = mm || '00';
+      modalContent.querySelectorAll('.minute-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.minute === selectedMinute));
+    }
+    saveRecruitDraft();
+    updateTimeUI();
+  };
+
+  const applyDirectTime = () => {
+    const hh = hourSelect.value;
+    if (!hh) { setTime(''); return; }
+    if (hh === '24') selectedMinute = '00';
+    setTime(`${hh}:${selectedMinute}`);
+  };
+
   const draft = getRecruitDraft();
   Object.entries(draft).forEach(([id, value]) => { const el = modalContent.querySelector('#' + id); if (el) el.value = value; });
+  if (timeInput.value) {
+    const [hh, mm] = timeInput.value.split(':');
+    hourSelect.value = hh;
+    selectedMinute = mm || '00';
+    modalContent.querySelectorAll('.minute-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.minute === selectedMinute));
+  }
   updateDatePreview();
+  updateTimeUI();
 
   modalContent.querySelectorAll('.quick-date-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -445,7 +488,15 @@ function openRecruitModal() {
       updateDatePreview();
     });
   });
-  modalContent.querySelectorAll('input, select, textarea').forEach(el => {
+  modalContent.querySelectorAll('.quick-time-btn').forEach(btn => btn.addEventListener('click', () => setTime(btn.dataset.time)));
+  hourSelect.addEventListener('change', applyDirectTime);
+  modalContent.querySelectorAll('.minute-btn').forEach(btn => btn.addEventListener('click', () => {
+    selectedMinute = btn.dataset.minute;
+    if (hourSelect.value === '24') selectedMinute = '00';
+    modalContent.querySelectorAll('.minute-btn').forEach(b => b.classList.toggle('active', b.dataset.minute === selectedMinute));
+    applyDirectTime();
+  }));
+  modalContent.querySelectorAll('#new-dungeon, #new-date, #new-memo').forEach(el => {
     el.addEventListener('input', () => { saveRecruitDraft(); if (el.id === 'new-date') updateDatePreview(); });
     el.addEventListener('change', () => { saveRecruitDraft(); if (el.id === 'new-date') updateDatePreview(); });
   });
