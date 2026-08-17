@@ -337,3 +337,26 @@ h1 { font-size: 42px; line-height: 1; margin: 0 0 10px; letter-spacing: -.03em; 
 @media (max-width: 980px) {
   .simple-recruit-item { grid-template-columns: 1fr; }
 }
+
+
+/* v6 날짜/시간 선택 개선 + 무스펠 난이도 구분 강화 */
+.muspel-normal-card { border-color: rgba(72,184,255,.88) !important; box-shadow: inset 0 0 0 1px rgba(72,184,255,.18), 0 10px 28px rgba(32,120,190,.16); }
+.muspel-normal-card .card-overlay { background: linear-gradient(180deg, rgba(15,42,68,.08) 0%, rgba(10,52,88,.30) 52%, rgba(5,22,38,.92) 100%); }
+.muspel-normal-card .difficulty.normal { color:#8dd4ff; background:rgba(29,112,171,.28); border:1px solid rgba(92,194,255,.62); }
+.hard-card { border-color: rgba(255,91,77,.90) !important; box-shadow: inset 0 0 0 1px rgba(255,91,77,.16), 0 10px 28px rgba(170,42,32,.17); }
+.hard-card .card-overlay { background: linear-gradient(180deg, rgba(76,11,8,.10) 0%, rgba(99,19,13,.34) 50%, rgba(42,7,6,.93) 100%); }
+.hard-card .difficulty.hard { color:#ff9b91; background:rgba(157,39,29,.30); border:1px solid rgba(255,99,84,.72); }
+.muspel-normal-card h2::after,.hard-card h2::after { display:inline-block; margin-left:9px; padding:2px 7px; border-radius:999px; font-size:11px; font-weight:900; vertical-align:middle; letter-spacing:.03em; }
+.muspel-normal-card h2::after { content:'NORMAL'; color:#8dd4ff; border:1px solid rgba(92,194,255,.50); background:rgba(29,112,171,.18); }
+.hard-card h2::after { content:'HARD'; color:#ff9b91; border:1px solid rgba(255,99,84,.58); background:rgba(157,39,29,.22); }
+.recruit-simple-form { gap:16px; }
+.quick-date-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+.quick-date-btn { min-height:42px; border-radius:10px; border:1px solid rgba(83,113,143,.42); background:rgba(5,14,23,.62); color:#cbd9e6; cursor:pointer; font-weight:800; }
+.quick-date-btn:hover { border-color:rgba(74,163,255,.62); color:#fff; }
+.quick-date-btn.active { background:rgba(41,116,178,.22); border-color:rgba(74,163,255,.78); color:#8fd0ff; }
+.date-input-wrap,.time-select-wrap { position:relative; display:flex; align-items:center; }
+.date-icon,.time-icon { position:absolute; left:14px; z-index:2; pointer-events:none; color:#9fc9ee; font-size:18px; }
+.date-input-wrap input,.time-select-wrap select { width:100%; min-height:50px; padding-left:44px !important; font-size:16px; font-weight:700; }
+.date-input-wrap input::-webkit-calendar-picker-indicator { width:28px; height:28px; opacity:.95; cursor:pointer; filter:invert(92%) sepia(10%) saturate(500%) hue-rotate(170deg); }
+.selected-date-preview { margin-top:8px; color:#8fd0ff; font-weight:800; font-size:13px; }
+.time-help { margin-top:7px; color:var(--muted); font-size:12px; }
