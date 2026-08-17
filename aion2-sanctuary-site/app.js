@@ -23,6 +23,7 @@ const STORAGE = {
   applications: 'aion2_v2_applications',
   activities: 'aion2_v2_activities',
   recruitDraft: 'aion2_v4_recruit_draft',
+  ownerId: 'aion2_v13_owner_id',
 };
 
 const state = {
@@ -35,13 +36,25 @@ const state = {
   currentView: 'recruit',
 };
 
+const CURRENT_OWNER_ID = (() => {
+  let id = localStorage.getItem(STORAGE.ownerId);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(STORAGE.ownerId, id);
+  }
+  return id;
+})();
+
 function syncRecruitParticipants() {
   state.recruits.forEach(recruit => {
+    if (!recruit.ownerId) recruit.ownerId = CURRENT_OWNER_ID;
     if (!Array.isArray(recruit.participants)) recruit.participants = [];
     const app = state.applications[recruit.id];
     if (app && !recruit.participants.some(p => p.characterId === app.characterId)) {
-      recruit.participants.push({ characterId: app.characterId, characterName: app.characterName, className: app.className, at: app.at || Date.now() });
+      const party = recruit.participants.filter(p => (p.party || 1) === 1).length < 5 ? 1 : 2;
+      recruit.participants.push({ characterId: app.characterId, characterName: app.characterName, className: app.className, at: app.at || Date.now(), party });
     }
+    recruit.participants.forEach((p, i) => { if (!p.party) p.party = i < 5 ? 1 : 2; });
     recruit.current = recruit.participants.length;
   });
 }
@@ -233,27 +246,77 @@ function renderApplicationsPage() {
   wrap.querySelectorAll('[data-cancel-app]').forEach(btn => btn.addEventListener('click', () => cancelJoin(btn.dataset.cancelApp)));
 }
 
+function renderPartyGroup(recruit, partyNo, canManage) {
+  const partyMembers = recruit.participants.filter(p => (p.party || 1) === partyNo);
+  const rows = partyMembers.length ? partyMembers.map((p, index) => `<div class="participant-row party-participant-row">
+      <div class="participant-order">${index + 1}</div>
+      <img class="class-icon" src="${CLASSES[p.className]}" alt="${escapeHtml(p.className)}" />
+      <div class="participant-copy">
+        <strong>${escapeHtml(p.characterName)}</strong>
+        <span>${escapeHtml(p.className)}</span>
+      </div>
+      ${state.applications[recruit.id]?.characterId === p.characterId ? '<span class="participant-me">나</span>' : ''}
+      ${canManage ? `<div class="party-manage-actions">
+        <button data-move-participant="${p.characterId}" data-direction="up" title="위로">↑</button>
+        <button data-move-participant="${p.characterId}" data-direction="down" title="아래로">↓</button>
+        <button class="party-switch-btn" data-switch-party="${p.characterId}" data-target-party="${partyNo === 1 ? 2 : 1}">${partyNo === 1 ? '2파티로' : '1파티로'}</button>
+      </div>` : ''}
+    </div>`).join('') : `<div class="party-empty">아직 참여자가 없습니다.</div>`;
+  return `<section class="party-section">
+    <div class="party-section-head"><strong>${partyNo}파티</strong><span>${partyMembers.length}/5명</span></div>
+    <div class="party-member-list">${rows}</div>
+  </section>`;
+}
+
 function openParticipantList(recruitId) {
   const recruit = state.recruits.find(r => r.id === recruitId);
   if (!recruit) return;
-  const participants = Array.isArray(recruit.participants) ? recruit.participants : [];
-  const participantHtml = participants.length
-    ? participants.map(p => `<div class="participant-row">
-        <img class="class-icon" src="${CLASSES[p.className]}" alt="${escapeHtml(p.className)}" />
-        <div class="participant-copy">
-          <strong>${escapeHtml(p.characterName)}</strong>
-          <span>${escapeHtml(p.className)}</span>
-        </div>
-        ${state.applications[recruit.id]?.characterId === p.characterId ? '<span class="participant-me">나</span>' : ''}
-      </div>`).join('')
-    : `<div class="participant-empty">아직 참여한 캐릭터가 없습니다.</div>`;
-
+  if (!Array.isArray(recruit.participants)) recruit.participants = [];
+  const canManage = recruit.ownerId === CURRENT_OWNER_ID;
   openModal(`<span class="modal-eyebrow">${escapeHtml(recruit.dungeon)}</span>
     <h2 id="modal-title">참여 목록</h2>
-    <p class="modal-desc">현재 ${participants.length}/${recruit.max}명이 참여 중입니다.</p>
-    <div class="participant-list-wrap">${participantHtml}</div>
+    <p class="modal-desc">현재 ${recruit.participants.length}/${recruit.max}명이 참여 중입니다.${canManage ? ' 모집자는 순서와 파티를 변경할 수 있습니다.' : ''}</p>
+    <div class="party-grid">
+      ${renderPartyGroup(recruit, 1, canManage)}
+      ${renderPartyGroup(recruit, 2, canManage)}
+    </div>
     <div class="modal-actions"><button class="ghost-btn" data-modal-cancel>닫기</button></div>`);
+  modal.classList.add('light-action-modal', 'participant-modal');
   modalContent.querySelector('[data-modal-cancel]').addEventListener('click', closeModal);
+  modalContent.querySelectorAll('[data-move-participant]').forEach(btn => btn.addEventListener('click', () => moveParticipant(recruitId, btn.dataset.moveParticipant, btn.dataset.direction)));
+  modalContent.querySelectorAll('[data-switch-party]').forEach(btn => btn.addEventListener('click', () => switchParticipantParty(recruitId, btn.dataset.switchParty, Number(btn.dataset.targetParty))));
+}
+
+function moveParticipant(recruitId, characterId, direction) {
+  const recruit = state.recruits.find(r => r.id === recruitId);
+  if (!recruit || recruit.ownerId !== CURRENT_OWNER_ID) return;
+  const participant = recruit.participants.find(p => p.characterId === characterId);
+  if (!participant) return;
+  const party = participant.party || 1;
+  const indexes = recruit.participants.map((p, i) => ({p, i})).filter(x => (x.p.party || 1) === party);
+  const pos = indexes.findIndex(x => x.p.characterId === characterId);
+  const targetPos = direction === 'up' ? pos - 1 : pos + 1;
+  if (targetPos < 0 || targetPos >= indexes.length) return;
+  const a = indexes[pos].i;
+  const b = indexes[targetPos].i;
+  [recruit.participants[a], recruit.participants[b]] = [recruit.participants[b], recruit.participants[a]];
+  save();
+  openParticipantList(recruitId);
+}
+
+function switchParticipantParty(recruitId, characterId, targetParty) {
+  const recruit = state.recruits.find(r => r.id === recruitId);
+  if (!recruit || recruit.ownerId !== CURRENT_OWNER_ID) return;
+  const targetCount = recruit.participants.filter(p => (p.party || 1) === targetParty).length;
+  if (targetCount >= 5) { showToast(`${targetParty}파티는 이미 5명입니다.`); return; }
+  const participant = recruit.participants.find(p => p.characterId === characterId);
+  if (!participant) return;
+  participant.party = targetParty;
+  // 해당 파티 끝으로 이동
+  recruit.participants = recruit.participants.filter(p => p.characterId !== characterId);
+  recruit.participants.push(participant);
+  save();
+  openParticipantList(recruitId);
 }
 
 function getRecruitThemeClass(dungeon) {
@@ -340,13 +403,13 @@ const modalContent = document.querySelector('#modal-content');
 let backdropPointerStarted = false;
 
 function openModal(html) {
-  modal.classList.remove('recruit-modal-clean');
+  modal.classList.remove('recruit-modal-clean', 'light-action-modal', 'participant-modal');
   modalContent.innerHTML = html;
   backdrop.classList.remove('hidden');
   backdrop.setAttribute('aria-hidden', 'false');
 }
 function closeModal() {
-  modal.classList.remove('recruit-modal-clean');
+  modal.classList.remove('recruit-modal-clean', 'light-action-modal', 'participant-modal');
   backdrop.classList.add('hidden');
   backdrop.setAttribute('aria-hidden', 'true');
   modalContent.innerHTML = '';
@@ -376,6 +439,7 @@ function openJoin(recruitId) {
   </label>`).join('');
 
   openModal(`<span class="modal-eyebrow">${escapeHtml(recruit.dungeon)}</span><h2 id="modal-title">어떤 캐릭터로 참여하시겠어요?</h2><p class="modal-desc">${escapeHtml(recruit.time)} · 현재 ${recruit.current}/${recruit.max}명</p><div class="join-options">${options}</div><div class="modal-actions"><button class="ghost-btn" data-modal-cancel>취소</button><button class="primary-btn" id="confirm-join">참여하기</button></div>`);
+  modal.classList.add('light-action-modal');
   modalContent.querySelector('[data-modal-cancel]').addEventListener('click', closeModal);
   modalContent.querySelector('#confirm-join').addEventListener('click', confirmJoin);
 }
@@ -390,7 +454,8 @@ function confirmJoin() {
   state.applications[recruit.id] = { characterId: character.id, characterName: character.name, className: character.className, at: joinedAt };
   if (!Array.isArray(recruit.participants)) recruit.participants = [];
   if (!recruit.participants.some(p => p.characterId === character.id)) {
-    recruit.participants.push({ characterId: character.id, characterName: character.name, className: character.className, at: joinedAt });
+    const party = recruit.participants.filter(p => (p.party || 1) === 1).length < 5 ? 1 : 2;
+    recruit.participants.push({ characterId: character.id, characterName: character.name, className: character.className, at: joinedAt, party });
   }
   recruit.current = recruit.participants.length;
   state.activities.unshift({ text: `${character.name}님이 ${recruit.dungeon} 파티에 참여했습니다.`, time: '방금 전' });
