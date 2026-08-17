@@ -88,13 +88,15 @@ function renderRecruits() {
   const list = document.querySelector('#recruit-list');
   const rows = state.filter === '전체' ? state.recruits : state.recruits.filter(r => r.dungeon === state.filter);
   if (!rows.length) {
-    list.innerHTML = `<div class="empty-state">
+    list.innerHTML = `<div class="empty-state white-empty-state">
       <div class="empty-icon">＋</div>
       <strong>현재 모집 중인 파티가 없습니다.</strong>
-      <span>첫 번째 성역 모집을 만들어보세요.</span>
-      <button class="outline-btn empty-create">모집 만들기</button>
+      <span>원하시는 성역 모집을 직접 만들어보세요.</span>
+    </div>
+    <div class="recruit-bottom-action">
+      <button class="primary-btn add-recruit-inline">＋ 모집하기</button>
     </div>`;
-    list.querySelector('.empty-create')?.addEventListener('click', openRecruitModal);
+    list.querySelector('.add-recruit-inline')?.addEventListener('click', openRecruitModal);
     return;
   }
 
@@ -102,7 +104,7 @@ function renderRecruits() {
     const app = state.applications[r.id];
     const dateText = r.date ? `${escapeHtml(formatDateKo(r.date))} · ${escapeHtml(r.time)}` : escapeHtml(r.time);
     const memoText = r.memo ? escapeHtml(r.memo).replace(/\n/g, '<br>') : '메모가 없습니다.';
-    return `<article class="recruit-item simple-recruit-item">
+    return `<article class="recruit-item simple-recruit-item white-recruit-item ${getRecruitThemeClass(r.dungeon)}">
       <div class="recruit-title">
         <img class="thumb" src="${DUNGEON_IMAGE[r.dungeon]}" alt="${escapeHtml(r.dungeon)}" />
         <div>
@@ -118,12 +120,17 @@ function renderRecruits() {
         <span class="label">메모</span>
         <div class="recruit-note-text">${memoText}</div>
       </div>
-      ${app ? `<button class="cancel-btn" data-cancel="${r.id}">참여 취소</button>` : `<button class="join-btn" data-join="${r.id}">참여하기</button>`}
+      <div class="recruit-action-stack">
+        ${app ? `<button class="cancel-btn clean-action-btn" data-cancel="${r.id}">참여 취소</button>` : `<button class="join-btn clean-action-btn" data-join="${r.id}">참여하기</button>`}
+        <button class="delete-recruit-btn" data-delete-recruit="${r.id}">삭제</button>
+      </div>
     </article>`;
-  }).join('');
+  }).join('') + `<div class="recruit-bottom-action"><button class="primary-btn add-recruit-inline">＋ 모집하기</button></div>`;
 
   list.querySelectorAll('[data-join]').forEach(btn => btn.addEventListener('click', () => openJoin(btn.dataset.join)));
   list.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', () => cancelJoin(btn.dataset.cancel)));
+  list.querySelectorAll('[data-delete-recruit]').forEach(btn => btn.addEventListener('click', () => deleteRecruit(btn.dataset.deleteRecruit)));
+  list.querySelector('.add-recruit-inline')?.addEventListener('click', openRecruitModal);
 }
 
 function renderCharacters() {
@@ -208,6 +215,26 @@ function renderApplicationsPage() {
   </article>`).join('');
 
   wrap.querySelectorAll('[data-cancel-app]').forEach(btn => btn.addEventListener('click', () => cancelJoin(btn.dataset.cancelApp)));
+}
+
+function getRecruitThemeClass(dungeon) {
+  if (dungeon === '루드라') return 'theme-rudra';
+  if (dungeon === '침식') return 'theme-erosion';
+  if (dungeon === '무스펠 보통') return 'theme-muspel-normal';
+  if (dungeon === '무스펠 어려움') return 'theme-muspel-hard';
+  return '';
+}
+
+function deleteRecruit(recruitId) {
+  const recruit = state.recruits.find(r => r.id === recruitId);
+  if (!recruit) return;
+  if (!window.confirm(`'${recruit.dungeon}' 모집을 삭제할까요?`)) return;
+  delete state.applications[recruitId];
+  state.recruits = state.recruits.filter(r => r.id !== recruitId);
+  state.activities.unshift({ text: `${recruit.dungeon} 모집이 삭제되었습니다.`, time: '방금 전' });
+  save();
+  render();
+  showToast('모집을 삭제했습니다.');
 }
 
 function setRepresentative(characterId) {

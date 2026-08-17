@@ -711,3 +711,183 @@ h1 { font-size: 42px; line-height: 1; margin: 0 0 10px; letter-spacing: -.03em; 
   .recruit-modal-clean { padding: 18px 16px 16px; }
   .compact-row { grid-template-columns: 1fr; }
 }
+
+
+/* v10: 화이트 테마 + 깔끔한 모집 버튼/삭제 버튼 */
+:root {
+  --bg: #f7f8fa;
+  --panel: #ffffff;
+  --panel-2: #ffffff;
+  --line: #e3e8ef;
+  --text: #18212b;
+  --muted: #667281;
+  --accent: #5a84b1;
+  --accent-2: #5a84b1;
+}
+html, body {
+  background: #f6f8fb;
+  color: var(--text);
+}
+body::before { display: none; }
+.app-shell { width: min(100% - 40px, 1240px); }
+.topbar {
+  background: rgba(255,255,255,.92);
+  border: 1px solid #e5eaf0;
+  box-shadow: 0 14px 34px rgba(15,23,42,.06);
+  backdrop-filter: blur(10px);
+}
+.brand-copy strong, .brand-copy span, .nav-tab, .profile-btn { color: #243241; }
+.nav-tab.active { color: #2d6da8; border-bottom-color: #2d6da8; }
+.nav-tab:hover { background: #f3f6fa; }
+.icon-btn {
+  background: #ffffff;
+  border: 1px solid #dce4ed;
+  color: #425466;
+}
+.profile-btn {
+  background: #ffffff;
+  border: 1px solid #dce4ed;
+}
+.profile-menu { background: #ffffff; border-color: #dde4ec; box-shadow: 0 14px 35px rgba(15,23,42,.12); }
+.profile-menu button { color: #2e3946; }
+.profile-menu button:hover { background: #f3f6fa; color: #1b2631; }
+.profile-menu-note { color: #7b8694; border-top-color: #eef2f6; }
+.hero {
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfd 100%);
+  border: 1px solid #e5eaf0;
+  box-shadow: 0 12px 30px rgba(15,23,42,.05);
+}
+.hero p, .page-heading p, .panel-head p { color: #6a7786; }
+.hero h1, .page-heading h1, .panel-head h3, .recruit-name, .character-card-name, .application-dungeon { color: #17212b; }
+.panel, .page-panel, .side-panel {
+  background: #ffffff;
+  border: 1px solid #e5eaf0;
+  box-shadow: 0 10px 24px rgba(15,23,42,.04);
+}
+.filter {
+  background: #ffffff;
+  border: 1px solid #d9e1ea;
+  color: #4d5d6d;
+}
+.filter.active { background: #5a84b1; border-color: #5a84b1; color: #fff; }
+.filter:hover { border-color: #b8c6d6; background: #f8fafc; }
+.text-btn { color: #55789d; }
+.outline-btn {
+  border: 1px solid #d7e0ea;
+  color: #40658a;
+  background: #ffffff;
+}
+.outline-btn:hover { background: #f5f8fb; }
+.primary-btn, .join-btn {
+  border: 1px solid #5a84b1;
+  background: #5a84b1;
+  color: #ffffff;
+  box-shadow: none;
+}
+.primary-btn:hover, .join-btn:hover { background: #4d779f; border-color: #4d779f; }
+.side-panel .character-row, .character-card, .application-card {
+  background: #fbfcfd;
+  border-color: #e4eaf1;
+}
+.character-row.representative, .character-card.representative {
+  background: #f4f8fc;
+  border-color: #c9d9ea;
+}
+.rep-badge {
+  color: #8a6922;
+  border-color: #ecd9aa;
+  background: #fff9ea;
+}
+.mini-empty, .empty-state {
+  background: #fbfcfd;
+  border-color: #e0e7ef;
+  color: #6a7786;
+}
+.empty-state strong { color: #243241; }
+.empty-icon {
+  color: #5a84b1;
+  background: #eef4fa;
+  border-color: #d4e2f1;
+}
+.simple-recruit-item.white-recruit-item {
+  grid-template-columns: minmax(220px, 1.1fr) .65fr 1.25fr auto;
+  border-radius: 16px;
+  border: 1px solid #e3e8ef;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(15,23,42,.04);
+}
+.recruit-sub, .label, .application-meta, .char-class, .character-card-class { color: #708090; }
+.thumb { border-color: #e5eaf1; }
+.recruit-note-text { color: #364252; }
+.recruit-action-stack {
+  display: grid;
+  gap: 8px;
+  align-content: center;
+  min-width: 122px;
+}
+.clean-action-btn {
+  min-width: 120px;
+  min-height: 42px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+.cancel-btn.clean-action-btn {
+  border: 1px solid #d7e0ea;
+  background: #ffffff;
+  color: #4e6480;
+}
+.cancel-btn.clean-action-btn:hover { background: #f5f8fb; }
+.delete-recruit-btn {
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid #ead5d5;
+  background: #ffffff;
+  color: #b05d5d;
+  cursor: pointer;
+  font-weight: 700;
+}
+.delete-recruit-btn:hover { background: #fff7f7; border-color: #e2c5c5; }
+.recruit-bottom-action {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+.add-recruit-inline {
+  min-width: 160px;
+  min-height: 44px;
+  border-radius: 12px;
+}
+.white-empty-state { min-height: 210px; }
+.theme-rudra { border-left: 4px solid #a879e0; }
+.theme-erosion { border-left: 4px solid #59c3ae; }
+.theme-muspel-normal { border-left: 4px solid #58b7ef; }
+.theme-muspel-hard { border-left: 4px solid #e77d73; }
+.dungeon-card {
+  box-shadow: 0 10px 24px rgba(15,23,42,.05);
+}
+.dungeon-card .card-content p, .dungeon-card .card-content h2, .dungeon-card .eyebrow, .dungeon-card .difficulty { text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.modal-backdrop {
+  background: rgba(17,24,39,.26);
+  backdrop-filter: blur(6px);
+}
+.recruit-modal-clean {
+  border-color: #e3e8ef;
+  box-shadow: 0 28px 70px rgba(15,23,42,.16);
+}
+.recruit-modal-clean .field textarea {
+  background: #ffffff;
+  color: #17202a;
+  pointer-events: auto;
+  user-select: text;
+}
+.toast {
+  background: #ffffff;
+  color: #243241;
+  border: 1px solid #dce4ed;
+  box-shadow: 0 16px 40px rgba(15,23,42,.12);
+}
+@media (max-width: 860px) {
+  .simple-recruit-item.white-recruit-item { grid-template-columns: 1fr; }
+  .recruit-action-stack { grid-template-columns: 1fr 1fr; min-width: 0; }
+  .delete-recruit-btn, .clean-action-btn { width: 100%; }
+}
