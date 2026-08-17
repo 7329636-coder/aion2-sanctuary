@@ -274,11 +274,13 @@ const modalContent = document.querySelector('#modal-content');
 let backdropPointerStarted = false;
 
 function openModal(html) {
+  modal.classList.remove('recruit-modal-clean');
   modalContent.innerHTML = html;
   backdrop.classList.remove('hidden');
   backdrop.setAttribute('aria-hidden', 'false');
 }
 function closeModal() {
+  modal.classList.remove('recruit-modal-clean');
   backdrop.classList.add('hidden');
   backdrop.setAttribute('aria-hidden', 'true');
   modalContent.innerHTML = '';
@@ -291,7 +293,6 @@ backdrop.addEventListener('pointerup', e => {
   if (backdropPointerStarted && e.target === backdrop) closeModal();
   backdropPointerStarted = false;
 });
-modal.addEventListener('dragstart', e => e.preventDefault());
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !backdrop.classList.contains('hidden')) closeModal(); });
 
 function openJoin(recruitId) {
@@ -373,58 +374,54 @@ function clearRecruitDraft() {
 
 function openRecruitModal() {
   const dungeonOptions = ['루드라','침식','무스펠 보통','무스펠 어려움'].map(d => `<option value="${d}">${d}</option>`).join('');
-  const hourOptions = ['<option value="">시 선택</option>'];
+  const hourOptions = ['<option value="">시</option>'];
   for (let hour = 1; hour <= 24; hour++) {
     const hh = String(hour).padStart(2, '0');
-    hourOptions.push(`<option value="${hh}">${hh}시</option>`);
+    hourOptions.push(`<option value="${hh}">${hh}</option>`);
   }
 
-  openModal(`<span class="modal-eyebrow">새 모집</span><h2 id="modal-title">성역 모집 만들기</h2><p class="modal-desc">성역, 날짜, 시간, 메모만 입력하면 됩니다.</p><div class="draft-note">작성 내용은 자동으로 임시 저장됩니다. 화면을 잘못 닫아도 다시 열면 그대로 남아 있습니다.</div><div class="form-grid single-column-form recruit-simple-form">
-    <div class="field"><label>성역 선택</label><select id="new-dungeon">${dungeonOptions}</select></div>
-    <div class="field calendar-field">
-      <label>날짜 선택</label>
-      <div class="quick-date-row">
-        <button type="button" class="quick-date-btn" data-date-offset="0">오늘</button>
-        <button type="button" class="quick-date-btn" data-date-offset="1">내일</button>
-        <button type="button" class="quick-date-btn" data-date-offset="2">모레</button>
-      </div>
-      <div class="date-input-wrap">
-        <span class="date-icon">📅</span>
+  openModal(`<span class="modal-eyebrow">새 모집</span><h2 id="modal-title">성역 모집 만들기</h2><div class="compact-recruit-form">
+    <div class="field">
+      <label for="new-dungeon">성역</label>
+      <select id="new-dungeon">${dungeonOptions}</select>
+    </div>
+
+    <div class="compact-row">
+      <div class="field compact-date-field">
+        <label for="new-date">날짜</label>
         <input id="new-date" type="date" />
       </div>
-      <div class="selected-date-preview" id="selected-date-preview">날짜를 선택해주세요.</div>
-    </div>
-    <div class="field time-field-v8">
-      <label>시간 선택</label>
-      <div class="quick-time-row">
-        <button type="button" class="quick-time-btn" data-time="20:00">20:00</button>
-        <button type="button" class="quick-time-btn" data-time="21:00">21:00</button>
-        <button type="button" class="quick-time-btn" data-time="22:00">22:00</button>
-        <button type="button" class="quick-time-btn" data-time="23:00">23:00</button>
-        <button type="button" class="quick-time-btn" data-time="24:00">24:00</button>
-      </div>
-      <div class="time-direct-label">다른 시간</div>
-      <div class="time-direct-row">
-        <select id="new-hour" aria-label="시">${hourOptions.join('')}</select>
-        <div class="minute-buttons" aria-label="분">
-          <button type="button" class="minute-btn active" data-minute="00">00분</button>
-          <button type="button" class="minute-btn" data-minute="30">30분</button>
+      <div class="field compact-time-field">
+        <label>시간 <span class="field-hint">24시간제</span></label>
+        <div class="compact-time-selects">
+          <select id="new-hour" aria-label="시">${hourOptions.join('')}</select>
+          <span class="time-colon">:</span>
+          <select id="new-minute" aria-label="분">
+            <option value="00">00</option>
+            <option value="30">30</option>
+          </select>
         </div>
+        <input id="new-time" type="hidden" />
       </div>
-      <input id="new-time" type="hidden" />
-      <div class="selected-time-preview" id="selected-time-preview">시간을 선택해주세요.</div>
     </div>
-    <div class="field field-full"><label>메모</label><textarea id="new-memo" rows="5" placeholder="모집할 때 필요한 내용을 적어주세요.\n예: 초보 환영 / 22시 출발 / 편하게 오세요"></textarea></div>
-  </div><div class="modal-actions"><button class="ghost-btn" data-modal-cancel>닫기</button><button class="primary-btn" id="save-recruit">등록하기</button></div>`);
+
+    <div class="field memo-field">
+      <label for="new-memo">메모</label>
+      <textarea id="new-memo" rows="3" maxlength="200" placeholder="예: 초보 환영 / 22시 출발 / 편하게 오세요"></textarea>
+      <div class="memo-count"><span id="memo-count">0</span>/200</div>
+    </div>
+  </div><div class="modal-actions compact-modal-actions"><button class="ghost-btn" data-modal-cancel>닫기</button><button class="primary-btn" id="save-recruit">등록하기</button></div>`);
+
+  modal.classList.add('recruit-modal-clean');
 
   const dateInput = modalContent.querySelector('#new-date');
-  const datePreview = modalContent.querySelector('#selected-date-preview');
-  const timeInput = modalContent.querySelector('#new-time');
-  const timePreview = modalContent.querySelector('#selected-time-preview');
   const hourSelect = modalContent.querySelector('#new-hour');
-  const today = new Date();
-  let selectedMinute = '00';
+  const minuteSelect = modalContent.querySelector('#new-minute');
+  const timeInput = modalContent.querySelector('#new-time');
+  const memoInput = modalContent.querySelector('#new-memo');
+  const memoCount = modalContent.querySelector('#memo-count');
 
+  const today = new Date();
   const toDateValue = d => {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -433,82 +430,55 @@ function openRecruitModal() {
   };
   dateInput.min = toDateValue(today);
 
-  const updateDatePreview = () => {
-    datePreview.textContent = dateInput.value ? formatDateKo(dateInput.value) : '날짜를 선택해주세요.';
-    modalContent.querySelectorAll('.quick-date-btn').forEach(btn => btn.classList.remove('active'));
-    [0,1,2].forEach(offset => {
-      const d = new Date();
-      d.setDate(d.getDate() + offset);
-      if (dateInput.value === toDateValue(d)) modalContent.querySelector(`.quick-date-btn[data-date-offset="${offset}"]`)?.classList.add('active');
-    });
-  };
-
-  const updateTimeUI = () => {
-    timePreview.textContent = timeInput.value ? `선택 시간  ${timeInput.value}` : '시간을 선택해주세요.';
-    timePreview.classList.toggle('has-value', !!timeInput.value);
-    modalContent.querySelectorAll('.quick-time-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.time === timeInput.value));
-  };
-
-  const setTime = value => {
-    timeInput.value = value;
-    if (value) {
-      const [hh, mm] = value.split(':');
-      hourSelect.value = hh;
-      selectedMinute = mm || '00';
-      modalContent.querySelectorAll('.minute-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.minute === selectedMinute));
-    }
-    saveRecruitDraft();
-    updateTimeUI();
-  };
-
-  const applyDirectTime = () => {
+  const syncTime = () => {
     const hh = hourSelect.value;
-    if (!hh) { setTime(''); return; }
-    if (hh === '24') selectedMinute = '00';
-    setTime(`${hh}:${selectedMinute}`);
+    let mm = minuteSelect.value;
+    if (hh === '24') {
+      mm = '00';
+      minuteSelect.value = '00';
+      minuteSelect.disabled = true;
+    } else {
+      minuteSelect.disabled = false;
+    }
+    timeInput.value = hh ? `${hh}:${mm}` : '';
+    saveRecruitDraft();
+  };
+
+  const updateMemoCount = () => {
+    memoCount.textContent = String(memoInput.value.length);
   };
 
   const draft = getRecruitDraft();
-  Object.entries(draft).forEach(([id, value]) => { const el = modalContent.querySelector('#' + id); if (el) el.value = value; });
-  if (timeInput.value) {
-    const [hh, mm] = timeInput.value.split(':');
+  if (draft['new-dungeon']) modalContent.querySelector('#new-dungeon').value = draft['new-dungeon'];
+  if (draft['new-date']) dateInput.value = draft['new-date'];
+  if (draft['new-memo']) memoInput.value = draft['new-memo'];
+  if (draft['new-time']) {
+    timeInput.value = draft['new-time'];
+    const [hh, mm = '00'] = draft['new-time'].split(':');
     hourSelect.value = hh;
-    selectedMinute = mm || '00';
-    modalContent.querySelectorAll('.minute-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.minute === selectedMinute));
+    minuteSelect.value = hh === '24' ? '00' : mm;
   }
-  updateDatePreview();
-  updateTimeUI();
+  syncTime();
+  updateMemoCount();
 
-  modalContent.querySelectorAll('.quick-date-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const d = new Date();
-      d.setDate(d.getDate() + Number(btn.dataset.dateOffset || 0));
-      dateInput.value = toDateValue(d);
-      saveRecruitDraft();
-      updateDatePreview();
-    });
-  });
-  modalContent.querySelectorAll('.quick-time-btn').forEach(btn => btn.addEventListener('click', () => setTime(btn.dataset.time)));
-  hourSelect.addEventListener('change', applyDirectTime);
-  modalContent.querySelectorAll('.minute-btn').forEach(btn => btn.addEventListener('click', () => {
-    selectedMinute = btn.dataset.minute;
-    if (hourSelect.value === '24') selectedMinute = '00';
-    modalContent.querySelectorAll('.minute-btn').forEach(b => b.classList.toggle('active', b.dataset.minute === selectedMinute));
-    applyDirectTime();
-  }));
-  modalContent.querySelectorAll('#new-dungeon, #new-date, #new-memo').forEach(el => {
-    el.addEventListener('input', () => { saveRecruitDraft(); if (el.id === 'new-date') updateDatePreview(); });
-    el.addEventListener('change', () => { saveRecruitDraft(); if (el.id === 'new-date') updateDatePreview(); });
+  modalContent.querySelector('#new-dungeon').addEventListener('change', saveRecruitDraft);
+  dateInput.addEventListener('input', saveRecruitDraft);
+  dateInput.addEventListener('change', saveRecruitDraft);
+  hourSelect.addEventListener('change', syncTime);
+  minuteSelect.addEventListener('change', syncTime);
+  memoInput.addEventListener('input', () => {
+    saveRecruitDraft();
+    updateMemoCount();
   });
 
   modalContent.querySelector('[data-modal-cancel]').addEventListener('click', closeModal);
   modalContent.querySelector('#save-recruit').addEventListener('click', () => {
     const dungeon = modalContent.querySelector('#new-dungeon').value;
-    const date = modalContent.querySelector('#new-date').value;
-    const time = modalContent.querySelector('#new-time').value;
-    const memo = modalContent.querySelector('#new-memo').value.trim();
-    if (!date) { showToast('날짜를 선택해주세요.'); return; }
-    if (!time) { showToast('시간을 선택해주세요.'); return; }
+    const date = dateInput.value;
+    const time = timeInput.value;
+    const memo = memoInput.value.trim();
+    if (!date) { showToast('날짜를 선택해주세요.'); dateInput.focus(); return; }
+    if (!time) { showToast('시간을 선택해주세요.'); hourSelect.focus(); return; }
     state.recruits.unshift({ id: crypto.randomUUID(), dungeon, date, time, memo, current: 0, max: 10 });
     state.activities.unshift({ text: `${dungeon} 모집이 등록되었습니다.`, time: '방금 전' });
     clearRecruitDraft();
