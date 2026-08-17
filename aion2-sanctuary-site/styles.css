@@ -891,3 +891,51 @@ body::before { display: none; }
   .recruit-action-stack { grid-template-columns: 1fr 1fr; min-width: 0; }
   .delete-recruit-btn, .clean-action-btn { width: 100%; }
 }
+
+
+/* v11: 로고/메모 가독성 개선 */
+.brand-logo {
+  width: 120px;
+  height: 56px;
+  object-fit: contain;
+  background: transparent !important;
+}
+.hero-title-wrap { gap: 14px; }
+.hero-icon {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  border-radius: 0;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0;
+}
+.recruit-note-block {
+  display: grid;
+  gap: 6px;
+  min-width: 220px;
+  padding: 10px 12px;
+  border: 1px solid #e6ebf1;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+.recruit-note-block .label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6e7d8d;
+}
+.recruit-note-text {
+  color: #2e3b49 !important;
+  line-height: 1.6;
+  font-size: 14px;
+  white-space: normal;
+  word-break: break-word;
+}
+.simple-recruit-item.white-recruit-item {
+  grid-template-columns: minmax(220px, 1.05fr) .58fr minmax(220px, 1fr) auto;
+  align-items: center;
+}
+@media (max-width: 860px) {
+  .recruit-note-block { min-width: 0; width: 100%; }
+}
