@@ -50,15 +50,6 @@
         </section>
 
         <section class="dungeon-grid" aria-label="성역 선택">
-          <button class="dungeon-card rudra-card" data-filter="루드라" style="--bg:url('assets/dungeons/rudra.jpg')">
-            <div class="card-overlay"></div>
-            <div class="card-content">
-              <span class="eyebrow">SANCTUARY</span>
-              <h2>루드라</h2>
-              <p><b id="count-rudra">0</b>건 모집 중</p>
-            </div>
-            <span class="card-arrow">→</span>
-          </button>
 
           <button class="dungeon-card erosion-card" data-filter="침식" style="--bg:url('assets/dungeons/erosion.jpg')">
             <div class="card-overlay"></div>
@@ -93,17 +84,22 @@
 
         <section class="dashboard-grid">
           <div class="panel recruit-panel">
-            <div class="panel-head">
+            <div class="panel-head recruit-panel-head">
               <div>
-                <h3>현재 모집 중</h3>
-                <p>참여할 파티를 선택하세요.</p>
+                <h3 id="recruit-panel-title">현재 모집 중</h3>
+                <p id="recruit-panel-desc">참여할 파티를 선택하세요.</p>
               </div>
-              <div class="filters" id="filters">
+              <div class="recruit-head-controls">
+                <div class="recruit-status-tabs" aria-label="모집 상태">
+                  <button class="recruit-status-tab active" data-recruit-status="active">모집 중</button>
+                  <button class="recruit-status-tab" data-recruit-status="completed">완료</button>
+                </div>
+                <div class="filters" id="filters">
                 <button class="filter active" data-filter="전체">전체</button>
-                <button class="filter" data-filter="루드라">루드라</button>
-                <button class="filter" data-filter="침식">침식</button>
+                                <button class="filter" data-filter="침식">침식</button>
                 <button class="filter" data-filter="무스펠 보통">무스펠 보통</button>
                 <button class="filter" data-filter="무스펠 어려움">무스펠 어려움</button>
+                </div>
               </div>
             </div>
             <div id="recruit-list" class="recruit-list"></div>

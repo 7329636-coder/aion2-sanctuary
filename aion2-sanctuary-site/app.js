@@ -11,7 +11,6 @@ const CLASSES = {
 };
 
 const DUNGEON_IMAGE = {
-  '루드라': 'assets/dungeons/rudra.jpg',
   '침식': 'assets/dungeons/erosion.jpg',
   '무스펠 보통': 'assets/dungeons/muspel.jpg',
   '무스펠 어려움': 'assets/dungeons/muspel.jpg',
@@ -34,6 +33,7 @@ const state = {
   filter: '전체',
   selectedRecruit: null,
   currentView: 'recruit',
+  recruitStatus: 'active',
 };
 
 const CURRENT_OWNER_ID = (() => {
@@ -44,6 +44,14 @@ const CURRENT_OWNER_ID = (() => {
   }
   return id;
 })();
+
+// 루드라 비활성화: 기존 데이터에서도 제거
+state.recruits = state.recruits.filter(r => r.dungeon !== '루드라');
+state.activities = state.activities.filter(a => !String(a.text || '').includes('루드라'));
+if (state.filter === '루드라') state.filter = '전체';
+Object.keys(state.applications).forEach(id => {
+  if (!state.recruits.some(r => r.id === id)) delete state.applications[id];
+});
 
 function syncRecruitParticipants() {
   state.recruits.forEach(recruit => {
@@ -87,7 +95,51 @@ function formatDateKo(dateString) {
   return `${d.getMonth() + 1}월 ${d.getDate()}일 (${weekdays[d.getDay()]})`;
 }
 
+const COMPLETED_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+
+function getRecruitScheduledAt(recruit) {
+  if (!recruit?.date || !recruit?.time) return null;
+  const [year, month, day] = recruit.date.split('-').map(Number);
+  const [rawHour, rawMinute = 0] = recruit.time.split(':').map(Number);
+  if (![year, month, day, rawHour, rawMinute].every(Number.isFinite)) return null;
+  const hour = rawHour === 24 ? 0 : rawHour;
+  const d = new Date(year, month - 1, day, hour, rawMinute, 0, 0);
+  if (rawHour === 24) d.setDate(d.getDate() + 1);
+  return d.getTime();
+}
+
+function isRecruitCompleted(recruit, now = Date.now()) {
+  const scheduledAt = getRecruitScheduledAt(recruit);
+  return scheduledAt !== null && now >= scheduledAt;
+}
+
+function cleanupExpiredRecruits(now = Date.now()) {
+  const expiredIds = [];
+  state.recruits = state.recruits.filter(recruit => {
+    const scheduledAt = getRecruitScheduledAt(recruit);
+    if (scheduledAt !== null && now >= scheduledAt + COMPLETED_RETENTION_MS) {
+      expiredIds.push(recruit.id);
+      return false;
+    }
+    return true;
+  });
+  if (expiredIds.length) {
+    expiredIds.forEach(id => delete state.applications[id]);
+    save();
+  }
+}
+
+function getCompletedRetentionText(recruit, now = Date.now()) {
+  const scheduledAt = getRecruitScheduledAt(recruit);
+  if (scheduledAt === null) return '';
+  const deleteAt = scheduledAt + COMPLETED_RETENTION_MS;
+  const remain = Math.max(0, deleteAt - now);
+  const days = Math.ceil(remain / (24 * 60 * 60 * 1000));
+  return `${days}일 후 자동 삭제`;
+}
+
 function render() {
+  cleanupExpiredRecruits();
   renderRecruits();
   renderCharacters();
   renderActivities();
@@ -97,9 +149,9 @@ function render() {
 }
 
 function renderCounts() {
-  const count = d => state.recruits.filter(r => r.dungeon === d).length;
+  const now = Date.now();
+  const count = d => state.recruits.filter(r => r.dungeon === d && !isRecruitCompleted(r, now)).length;
   const values = {
-    'count-rudra': count('루드라'),
     'count-erosion': count('침식'),
     'count-muspel-normal': count('무스펠 보통'),
     'count-muspel-hard': count('무스펠 어려움'),
@@ -112,8 +164,25 @@ function renderCounts() {
 
 function renderRecruits() {
   const list = document.querySelector('#recruit-list');
-  const rows = state.filter === '전체' ? state.recruits : state.recruits.filter(r => r.dungeon === state.filter);
+  const now = Date.now();
+  const statusRows = state.recruits.filter(r => state.recruitStatus === 'completed' ? isRecruitCompleted(r, now) : !isRecruitCompleted(r, now));
+  const rows = state.filter === '전체' ? statusRows : statusRows.filter(r => r.dungeon === state.filter);
+
+  const title = document.querySelector('#recruit-panel-title');
+  const desc = document.querySelector('#recruit-panel-desc');
+  if (title) title.textContent = state.recruitStatus === 'completed' ? '완료' : '현재 모집 중';
+  if (desc) desc.textContent = state.recruitStatus === 'completed' ? '시간이 지난 모집은 7일 동안 보관됩니다.' : '참여할 파티를 선택하세요.';
+  document.querySelectorAll('[data-recruit-status]').forEach(btn => btn.classList.toggle('active', btn.dataset.recruitStatus === state.recruitStatus));
+
   if (!rows.length) {
+    if (state.recruitStatus === 'completed') {
+      list.innerHTML = `<div class="empty-state white-empty-state completed-empty">
+        <div class="empty-icon">✓</div>
+        <strong>완료된 모집이 없습니다.</strong>
+        <span>모집 시간이 지나면 이곳으로 자동 이동합니다.</span>
+      </div>`;
+      return;
+    }
     list.innerHTML = `<div class="empty-state white-empty-state">
       <div class="empty-icon">＋</div>
       <strong>현재 모집 중인 파티가 없습니다.</strong>
@@ -127,20 +196,25 @@ function renderRecruits() {
   }
 
   list.innerHTML = rows.map(r => {
+    const completed = isRecruitCompleted(r, now);
     const app = state.applications[r.id];
     const participantCount = Array.isArray(r.participants) ? r.participants.length : (r.current || 0);
     const dateText = r.date ? `${escapeHtml(formatDateKo(r.date))} · ${escapeHtml(r.time)}` : escapeHtml(r.time);
     const memoText = r.memo ? escapeHtml(r.memo).split('\n').join('<br>') : '메모가 없습니다.';
-    return `<article class="recruit-item simple-recruit-item white-recruit-item ${getRecruitThemeClass(r.dungeon)}">
+    return `<article class="recruit-item simple-recruit-item white-recruit-item ${getRecruitThemeClass(r.dungeon)} ${completed ? 'completed-recruit-item' : ''}">
       <div class="recruit-title">
         <img class="thumb" src="${DUNGEON_IMAGE[r.dungeon]}" alt="${escapeHtml(r.dungeon)}" />
         <div>
-          <div class="recruit-name">${escapeHtml(r.dungeon)}</div>
+          <div class="recruit-name-row">
+            <div class="recruit-name">${escapeHtml(r.dungeon)}</div>
+            ${completed ? '<span class="completed-badge">완료</span>' : ''}
+          </div>
           <div class="recruit-sub">${dateText}</div>
+          ${completed ? `<div class="auto-delete-note">${getCompletedRetentionText(r, now)}</div>` : ''}
         </div>
       </div>
       <div class="recruit-meta compact-meta">
-        <span class="label">현재 인원</span>
+        <span class="label">${completed ? '참여 인원' : '현재 인원'}</span>
         <strong>${participantCount}/${r.max}명</strong>
         <button class="participant-preview-btn" data-participants="${r.id}">참여 목록 ${participantCount}명</button>
       </div>
@@ -149,11 +223,12 @@ function renderRecruits() {
         <div class="recruit-note-text">${memoText}</div>
       </div>
       <div class="recruit-action-stack">
-        ${app ? `<button class="cancel-btn clean-action-btn" data-cancel="${r.id}">참여 취소</button>` : `<button class="join-btn clean-action-btn" data-join="${r.id}">참여하기</button>`}
-        <button class="delete-recruit-btn" data-delete-recruit="${r.id}">삭제</button>
+        ${completed
+          ? `<div class="completed-action-label">진행 완료</div><button class="delete-recruit-btn" data-delete-recruit="${r.id}">삭제</button>`
+          : `${app ? `<button class="cancel-btn clean-action-btn" data-cancel="${r.id}">참여 취소</button>` : `<button class="join-btn clean-action-btn" data-join="${r.id}">참여하기</button>`}<button class="delete-recruit-btn" data-delete-recruit="${r.id}">삭제</button>`}
       </div>
     </article>`;
-  }).join('') + `<div class="recruit-bottom-action"><button class="primary-btn add-recruit-inline">＋ 모집하기</button></div>`;
+  }).join('') + (state.recruitStatus === 'active' ? `<div class="recruit-bottom-action"><button class="primary-btn add-recruit-inline">＋ 모집하기</button></div>` : '');
 
   list.querySelectorAll('[data-join]').forEach(btn => btn.addEventListener('click', () => openJoin(btn.dataset.join)));
   list.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', () => cancelJoin(btn.dataset.cancel)));
@@ -218,7 +293,8 @@ function renderActivities() {
 
 function renderApplicationsPage() {
   const wrap = document.querySelector('#applications-page-list');
-  const entries = Object.entries(state.applications).map(([recruitId, app]) => ({ recruit: state.recruits.find(r => r.id === recruitId), app })).filter(x => x.recruit);
+  const now = Date.now();
+  const entries = Object.entries(state.applications).map(([recruitId, app]) => ({ recruit: state.recruits.find(r => r.id === recruitId), app })).filter(x => x.recruit && !isRecruitCompleted(x.recruit, now));
   if (!entries.length) {
     wrap.innerHTML = `<div class="empty-state page-empty">
       <div class="empty-icon">✓</div>
@@ -320,7 +396,6 @@ function switchParticipantParty(recruitId, characterId, targetParty) {
 }
 
 function getRecruitThemeClass(dungeon) {
-  if (dungeon === '루드라') return 'theme-rudra';
   if (dungeon === '침식') return 'theme-erosion';
   if (dungeon === '무스펠 보통') return 'theme-muspel-normal';
   if (dungeon === '무스펠 어려움') return 'theme-muspel-hard';
@@ -362,7 +437,14 @@ function setFilter(filter) {
 }
 
 document.querySelectorAll('.filter').forEach(btn => btn.addEventListener('click', () => setFilter(btn.dataset.filter)));
-document.querySelectorAll('.dungeon-card').forEach(btn => btn.addEventListener('click', () => setFilter(btn.dataset.filter)));
+document.querySelectorAll('.dungeon-card').forEach(btn => btn.addEventListener('click', () => {
+  state.recruitStatus = 'active';
+  setFilter(btn.dataset.filter);
+}));
+document.querySelectorAll('[data-recruit-status]').forEach(btn => btn.addEventListener('click', () => {
+  state.recruitStatus = btn.dataset.recruitStatus;
+  renderRecruits();
+}));
 
 function switchView(view) {
   state.currentView = view;
@@ -403,13 +485,13 @@ const modalContent = document.querySelector('#modal-content');
 let backdropPointerStarted = false;
 
 function openModal(html) {
-  modal.classList.remove('recruit-modal-clean', 'light-action-modal', 'participant-modal');
+  modal.classList.remove('recruit-modal-clean', 'light-action-modal', 'participant-modal', 'character-modal-clean');
   modalContent.innerHTML = html;
   backdrop.classList.remove('hidden');
   backdrop.setAttribute('aria-hidden', 'false');
 }
 function closeModal() {
-  modal.classList.remove('recruit-modal-clean', 'light-action-modal', 'participant-modal');
+  modal.classList.remove('recruit-modal-clean', 'light-action-modal', 'participant-modal', 'character-modal-clean');
   backdrop.classList.add('hidden');
   backdrop.setAttribute('aria-hidden', 'true');
   modalContent.innerHTML = '';
@@ -426,6 +508,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !backdrop.
 
 function openJoin(recruitId) {
   const recruit = state.recruits.find(r => r.id === recruitId);
+  if (recruit && isRecruitCompleted(recruit)) { showToast('이미 완료된 모집입니다.'); render(); return; }
   if (!state.characters.length) {
     showToast('먼저 내 캐릭터를 등록해주세요.');
     openCharacterModal();
@@ -465,6 +548,7 @@ function confirmJoin() {
 function cancelJoin(recruitId) {
   const app = state.applications[recruitId];
   const recruit = state.recruits.find(r => r.id === recruitId);
+  if (recruit && isRecruitCompleted(recruit)) { showToast('완료된 모집에서는 참여 취소를 할 수 없습니다.'); render(); return; }
   if (!app || !recruit) return;
   delete state.applications[recruitId];
   if (!Array.isArray(recruit.participants)) recruit.participants = [];
@@ -479,8 +563,9 @@ function openCharacterModal() {
   openModal(`<span class="modal-eyebrow">내 캐릭터</span><h2 id="modal-title">캐릭터 추가</h2><p class="modal-desc">캐릭터명과 직업을 등록하세요.</p><div class="form-grid">
     <div class="field"><label for="character-name">캐릭터명</label><input id="character-name" maxlength="20" placeholder="캐릭터명을 입력하세요" /></div>
     <div class="field"><label for="character-class">직업</label><select id="character-class">${options}</select></div>
-    <label class="join-option"><input type="checkbox" id="representative" /> 이 캐릭터를 대표 캐릭터로 설정</label>
+    <label class="representative-check"><input type="checkbox" id="representative" /><span>이 캐릭터를 대표 캐릭터로 설정</span></label>
   </div><div class="modal-actions"><button class="ghost-btn" data-modal-cancel>취소</button><button class="primary-btn" id="save-character">추가하기</button></div>`);
+  modal.classList.add('recruit-modal-clean', 'character-modal-clean');
   modalContent.querySelector('[data-modal-cancel]').addEventListener('click', closeModal);
   modalContent.querySelector('#save-character').addEventListener('click', () => {
     const name = modalContent.querySelector('#character-name').value.trim();
@@ -511,7 +596,7 @@ function clearRecruitDraft() {
 }
 
 function openRecruitModal() {
-  const dungeonOptions = ['루드라','침식','무스펠 보통','무스펠 어려움'].map(d => `<option value="${d}">${d}</option>`).join('');
+  const dungeonOptions = ['침식','무스펠 보통','무스펠 어려움'].map(d => `<option value="${d}">${d}</option>`).join('');
   const hourOptions = ['<option value="">시</option>'];
   for (let hour = 1; hour <= 24; hour++) {
     const hh = String(hour).padStart(2, '0');
@@ -617,7 +702,7 @@ function openRecruitModal() {
     const memo = memoInput.value.trim();
     if (!date) { showToast('날짜를 선택해주세요.'); dateInput.focus(); return; }
     if (!time) { showToast('시간을 선택해주세요.'); hourSelect.focus(); return; }
-    state.recruits.unshift({ id: crypto.randomUUID(), dungeon, date, time, memo, current: 0, max: 10 });
+    state.recruits.unshift({ id: crypto.randomUUID(), dungeon, date, time, memo, current: 0, max: 10, ownerId: CURRENT_OWNER_ID, participants: [] });
     state.activities.unshift({ text: `${dungeon} 모집이 등록되었습니다.`, time: '방금 전' });
     clearRecruitDraft();
     save(); closeModal(); render(); showToast('모집을 등록했습니다.');
@@ -636,3 +721,6 @@ function showToast(text) {
 }
 
 render();
+setInterval(() => {
+  if (state.currentView === 'recruit') render();
+}, 30000);

@@ -1091,3 +1091,152 @@ body::before { display: none; }
   .party-grid { grid-template-columns: 1fr; }
   .party-manage-actions { flex-wrap: wrap; justify-content: flex-end; }
 }
+
+
+/* v14 로고 크기 확대 */
+.brand-logo {
+  width: 146px !important;
+  height: 66px !important;
+  object-fit: contain;
+}
+.hero-icon {
+  width: 72px !important;
+  height: 72px !important;
+  object-fit: contain;
+}
+@media (max-width: 860px) {
+  .brand-logo {
+    width: 128px !important;
+    height: 58px !important;
+  }
+  .hero-icon {
+    width: 60px !important;
+    height: 60px !important;
+  }
+}
+
+
+/* v15 모집 완료/7일 보관 */
+.recruit-head-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.recruit-status-tabs {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid #dce4ed;
+  border-radius: 12px;
+  background: #f6f8fb;
+}
+.recruit-status-tab {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #697788;
+  font-weight: 800;
+  cursor: pointer;
+}
+.recruit-status-tab.active {
+  background: #ffffff;
+  color: #426d99;
+  box-shadow: 0 1px 5px rgba(15,23,42,.08);
+}
+.recruit-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.completed-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #f0f2f5;
+  color: #687583;
+  border: 1px solid #dfe4ea;
+  font-size: 11px;
+  font-weight: 800;
+}
+.completed-recruit-item {
+  background: #fbfcfd !important;
+  opacity: .94;
+}
+.completed-recruit-item .thumb {
+  filter: saturate(.7) brightness(.98);
+}
+.auto-delete-note {
+  margin-top: 5px;
+  color: #8a96a3;
+  font-size: 11px;
+  font-weight: 700;
+}
+.completed-action-label {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid #e0e5eb;
+  background: #f3f5f7;
+  color: #687583;
+  font-size: 13px;
+  font-weight: 800;
+}
+.completed-empty { min-height: 220px; }
+@media (max-width: 980px) {
+  .recruit-panel-head { align-items: flex-start; }
+  .recruit-head-controls { width: 100%; justify-content: flex-start; }
+}
+
+
+/* v16 캐릭터 추가 모달 화이트 정리 */
+.character-modal-clean {
+  width: min(560px, calc(100vw - 32px));
+}
+.character-modal-clean .representative-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1px solid #dbe3ec;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #415365;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.character-modal-clean .representative-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: #5a84b1;
+  cursor: pointer;
+}
+.character-modal-clean .representative-check span {
+  line-height: 1.4;
+}
+.character-modal-clean .modal-actions {
+  margin-top: 18px;
+}
+
+/* v16 루드라 제거 후 3개 카드 정렬 */
+.dungeon-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 1180px) {
+  .dungeon-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 760px) {
+  .dungeon-grid {
+    grid-template-columns: 1fr;
+  }
+}
