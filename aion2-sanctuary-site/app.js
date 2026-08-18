@@ -64,6 +64,32 @@ function save() {
 const SHARED_API_URL = '/api/data';
 const REPRESENTATIVE_KEY = 'aion2_shared_representative_character';
 let sharedErrorShown = false;
+let sharedFetchPromise = null;
+let lastSharedSignature = '';
+const SHARED_CACHE_KEY = 'aion2_shared_cache_v1';
+
+function sharedSignature(data) {
+  return JSON.stringify([
+    data?.recruits || [],
+    data?.participants || [],
+    data?.characters || []
+  ]);
+}
+
+function saveSharedCache(data) {
+  try {
+    localStorage.setItem(SHARED_CACHE_KEY, JSON.stringify(data));
+  } catch {}
+}
+
+function loadSharedCache() {
+  try {
+    const raw = localStorage.getItem(SHARED_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
 function boolValue(value) {
   return value === true || String(value).toLowerCase() === 'true';
@@ -98,7 +124,12 @@ function buildSharedActivities(recruits, participants) {
     .map(x => ({ text: x.text, time: timeAgo(x.at) }));
 }
 
-function applySharedData(data) {
+function applySharedData(data, { force = false } = {}) {
+  const signature = sharedSignature(data);
+  if (!force && state.sharedReady && signature === lastSharedSignature) {
+    return false;
+  }
+  lastSharedSignature = signature;
   const allParticipants = Array.isArray(data.participants) ? data.participants.map(p => ({
     ...p,
     id: String(p.id || ''),
@@ -167,24 +198,34 @@ function applySharedData(data) {
   state.activities = buildSharedActivities(recruits, allParticipants);
   state.sharedReady = true;
   render();
+  return true;
 }
 
 async function readSharedData({ silent = false } = {}) {
-  try {
-    const response = await fetch(`${SHARED_API_URL}?t=${Date.now()}`, { cache: 'no-store' });
-    const data = await response.json();
-    if (!response.ok || !data.ok) throw new Error(data.error || '공용 데이터를 불러오지 못했습니다.');
-    sharedErrorShown = false;
-    applySharedData(data);
-    return data;
-  } catch (err) {
-    console.error(err);
-    if (!silent || !sharedErrorShown) {
-      sharedErrorShown = true;
-      showToast('공용 데이터 연결을 확인해주세요.');
+  if (sharedFetchPromise) return sharedFetchPromise;
+
+  sharedFetchPromise = (async () => {
+    try {
+      const response = await fetch(SHARED_API_URL, { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || '공용 데이터를 불러오지 못했습니다.');
+      sharedErrorShown = false;
+      saveSharedCache(data);
+      applySharedData(data);
+      return data;
+    } catch (err) {
+      console.error(err);
+      if (!silent || !sharedErrorShown) {
+        sharedErrorShown = true;
+        showToast('공용 데이터 연결을 확인해주세요.');
+      }
+      return null;
+    } finally {
+      sharedFetchPromise = null;
     }
-    return null;
-  }
+  })();
+
+  return sharedFetchPromise;
 }
 
 async function postSharedData(payload) {
@@ -195,7 +236,8 @@ async function postSharedData(payload) {
   });
   const data = await response.json();
   if (!response.ok || !data.ok) throw new Error(data.error || '저장하지 못했습니다.');
-  applySharedData(data);
+  saveSharedCache(data);
+  applySharedData(data, { force: true });
   return data;
 }
 
@@ -899,9 +941,27 @@ function showToast(text) {
   setTimeout(() => el.remove(), 2400);
 }
 
-render();
-readSharedData();
-setInterval(() => readSharedData({ silent: true }), 30000);
+const cachedSharedData = loadSharedCache();
+if (cachedSharedData?.ok) {
+  applySharedData(cachedSharedData, { force: true });
+} else {
+  render();
+}
+readSharedData({ silent: Boolean(cachedSharedData?.ok) });
+
+// 공용 데이터 통신은 60초 간격으로 줄이고, 숨겨진 탭에서는 요청하지 않습니다.
+setInterval(() => {
+  if (!document.hidden) readSharedData({ silent: true });
+}, 60000);
+
+// 완료 전환/남은 기간 표시는 네트워크 요청 없이 화면에서만 갱신합니다.
+setInterval(() => {
+  if (!document.hidden && state.sharedReady) {
+    renderRecruits();
+    renderCounts();
+  }
+}, 30000);
+
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) readSharedData({ silent: true });
 });
