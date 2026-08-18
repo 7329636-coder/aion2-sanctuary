@@ -26,14 +26,15 @@ const STORAGE = {
 };
 
 const state = {
-  characters: load(STORAGE.characters, []),
-  recruits: load(STORAGE.recruits, []),
-  applications: load(STORAGE.applications, {}),
-  activities: load(STORAGE.activities, []),
+  characters: [],
+  recruits: [],
+  applications: {},
+  activities: [],
   filter: '전체',
   selectedRecruit: null,
   currentView: 'recruit',
   recruitStatus: 'active',
+  sharedReady: false,
 };
 
 const CURRENT_OWNER_ID = (() => {
@@ -45,29 +46,8 @@ const CURRENT_OWNER_ID = (() => {
   return id;
 })();
 
-// 루드라 비활성화: 기존 데이터에서도 제거
-state.recruits = state.recruits.filter(r => r.dungeon !== '루드라');
-state.activities = state.activities.filter(a => !String(a.text || '').includes('루드라'));
-if (state.filter === '루드라') state.filter = '전체';
-Object.keys(state.applications).forEach(id => {
-  if (!state.recruits.some(r => r.id === id)) delete state.applications[id];
-});
+// 공용 데이터는 Google 스프레드시트에서 불러옵니다.
 
-function syncRecruitParticipants() {
-  state.recruits.forEach(recruit => {
-    if (!recruit.ownerId) recruit.ownerId = CURRENT_OWNER_ID;
-    if (!Array.isArray(recruit.participants)) recruit.participants = [];
-    const app = state.applications[recruit.id];
-    if (app && !recruit.participants.some(p => p.characterId === app.characterId)) {
-      const party = recruit.participants.filter(p => (p.party || 1) === 1).length < 5 ? 1 : 2;
-      recruit.participants.push({ characterId: app.characterId, characterName: app.characterName, className: app.className, at: app.at || Date.now(), party });
-    }
-    recruit.participants.forEach((p, i) => { if (!p.party) p.party = i < 5 ? 1 : 2; });
-    recruit.current = recruit.participants.length;
-  });
-}
-
-syncRecruitParticipants();
 
 function load(key, fallback) {
   try {
@@ -77,10 +57,155 @@ function load(key, fallback) {
 }
 
 function save() {
-  localStorage.setItem(STORAGE.characters, JSON.stringify(state.characters));
-  localStorage.setItem(STORAGE.recruits, JSON.stringify(state.recruits));
-  localStorage.setItem(STORAGE.applications, JSON.stringify(state.applications));
-  localStorage.setItem(STORAGE.activities, JSON.stringify(state.activities));
+  // 공용 모집/참여 데이터는 서버에 저장합니다.
+  // 브라우저에는 사용자 식별값과 대표 캐릭터 선택만 유지합니다.
+}
+
+const SHARED_API_URL = '/api/data';
+const REPRESENTATIVE_KEY = 'aion2_shared_representative_character';
+let sharedErrorShown = false;
+
+function boolValue(value) {
+  return value === true || String(value).toLowerCase() === 'true';
+}
+
+function timeAgo(iso) {
+  const ms = new Date(iso || '').getTime();
+  if (!Number.isFinite(ms)) return '';
+  const diff = Math.max(0, Date.now() - ms);
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return '방금 전';
+  if (min < 60) return `${min}분 전`;
+  const hour = Math.floor(min / 60);
+  if (hour < 24) return `${hour}시간 전`;
+  const day = Math.floor(hour / 24);
+  return `${day}일 전`;
+}
+
+function buildSharedActivities(recruits, participants) {
+  const dungeonById = new Map(recruits.map(r => [String(r.id), r.dungeon]));
+  const rows = [];
+  recruits.forEach(r => {
+    if (r.createdAt) rows.push({ text: `${r.dungeon} 모집이 등록되었습니다.`, at: r.createdAt });
+  });
+  participants.forEach(p => {
+    const dungeon = dungeonById.get(String(p.recruitId));
+    if (dungeon && p.createdAt) rows.push({ text: `${p.characterName}님이 ${dungeon} 파티에 참여했습니다.`, at: p.createdAt });
+  });
+  return rows
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+    .slice(0, 30)
+    .map(x => ({ text: x.text, time: timeAgo(x.at) }));
+}
+
+function applySharedData(data) {
+  const allParticipants = Array.isArray(data.participants) ? data.participants.map(p => ({
+    ...p,
+    id: String(p.id || ''),
+    recruitId: String(p.recruitId || ''),
+    userId: String(p.userId || ''),
+    characterId: String(p.characterId || ''),
+    party: Number(p.party) === 2 ? 2 : 1,
+    order: Math.max(1, Number(p.order) || 1),
+  })) : [];
+
+  const participantsByRecruit = new Map();
+  allParticipants.forEach(p => {
+    if (!participantsByRecruit.has(p.recruitId)) participantsByRecruit.set(p.recruitId, []);
+    participantsByRecruit.get(p.recruitId).push(p);
+  });
+  participantsByRecruit.forEach(list => list.sort((a, b) => (a.party - b.party) || (a.order - b.order) || String(a.createdAt).localeCompare(String(b.createdAt))));
+
+  const recruits = Array.isArray(data.recruits) ? data.recruits
+    .filter(r => ['침식', '무스펠 보통', '무스펠 어려움'].includes(r.dungeon))
+    .map(r => {
+      const participants = participantsByRecruit.get(String(r.id)) || [];
+      return {
+        ...r,
+        id: String(r.id || ''),
+        ownerId: String(r.ownerId || ''),
+        max: 10,
+        participants,
+        current: participants.length,
+      };
+    }) : [];
+
+  const allCharacters = Array.isArray(data.characters) ? data.characters : [];
+  state.characters = allCharacters
+    .filter(c => String(c.userId || '') === CURRENT_OWNER_ID)
+    .map(c => ({
+      ...c,
+      id: String(c.id || ''),
+      representative: boolValue(c.representative),
+    }));
+
+  const preferredId = localStorage.getItem(REPRESENTATIVE_KEY);
+  if (preferredId && state.characters.some(c => c.id === preferredId)) {
+    state.characters.forEach(c => c.representative = c.id === preferredId);
+  } else if (state.characters.length) {
+    const currentRep = state.characters.find(c => c.representative) || state.characters[0];
+    state.characters.forEach(c => c.representative = c.id === currentRep.id);
+    localStorage.setItem(REPRESENTATIVE_KEY, currentRep.id);
+  } else {
+    localStorage.removeItem(REPRESENTATIVE_KEY);
+  }
+
+  state.recruits = recruits;
+  state.applications = {};
+  allParticipants
+    .filter(p => p.userId === CURRENT_OWNER_ID)
+    .forEach(p => {
+      state.applications[p.recruitId] = {
+        participantId: p.id,
+        characterId: p.characterId,
+        characterName: p.characterName,
+        className: p.className,
+        at: p.createdAt,
+      };
+    });
+
+  state.activities = buildSharedActivities(recruits, allParticipants);
+  state.sharedReady = true;
+  render();
+}
+
+async function readSharedData({ silent = false } = {}) {
+  try {
+    const response = await fetch(`${SHARED_API_URL}?t=${Date.now()}`, { cache: 'no-store' });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.error || '공용 데이터를 불러오지 못했습니다.');
+    sharedErrorShown = false;
+    applySharedData(data);
+    return data;
+  } catch (err) {
+    console.error(err);
+    if (!silent || !sharedErrorShown) {
+      sharedErrorShown = true;
+      showToast('공용 데이터 연결을 확인해주세요.');
+    }
+    return null;
+  }
+}
+
+async function postSharedData(payload) {
+  const response = await fetch(SHARED_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok || !data.ok) throw new Error(data.error || '저장하지 못했습니다.');
+  applySharedData(data);
+  return data;
+}
+
+function partyUpdatePayload(recruit) {
+  const count = { 1: 0, 2: 0 };
+  return recruit.participants.map(p => {
+    const party = (p.party || 1) === 2 ? 2 : 1;
+    count[party] += 1;
+    return { participantId: p.id, party, order: count[party] };
+  });
 }
 
 function escapeHtml(text) {
@@ -216,7 +341,7 @@ function renderRecruits() {
             <span class="auto-delete-note">${getCompletedRetentionText(r, now)}</span>
             <div class="completed-buttons">
               <button class="completed-party-btn" data-participants="${r.id}">파티 보기</button>
-              <button class="delete-recruit-btn compact-delete-btn" data-delete-recruit="${r.id}">삭제</button>
+              ${r.ownerId === CURRENT_OWNER_ID ? `<button class="delete-recruit-btn compact-delete-btn" data-delete-recruit="${r.id}">삭제</button>` : ''}
             </div>
           </div>
         </div>
@@ -247,7 +372,7 @@ function renderRecruits() {
         </div>
         <div class="recruit-action-stack">
           ${app ? `<button class="cancel-btn clean-action-btn" data-cancel="${r.id}">참여 취소</button>` : `<button class="join-btn clean-action-btn" data-join="${r.id}">참여하기</button>`}
-          <button class="delete-recruit-btn" data-delete-recruit="${r.id}">삭제</button>
+          ${r.ownerId === CURRENT_OWNER_ID ? `<button class="delete-recruit-btn" data-delete-recruit="${r.id}">삭제</button>` : ''}
         </div>
       </article>`;
     }).join('') + `<div class="recruit-bottom-action"><button class="primary-btn add-recruit-inline">＋ 모집하기</button></div>`;
@@ -386,7 +511,7 @@ function openParticipantList(recruitId) {
   modalContent.querySelectorAll('[data-switch-party]').forEach(btn => btn.addEventListener('click', () => switchParticipantParty(recruitId, btn.dataset.switchParty, Number(btn.dataset.targetParty))));
 }
 
-function moveParticipant(recruitId, characterId, direction) {
+async function moveParticipant(recruitId, characterId, direction) {
   const recruit = state.recruits.find(r => r.id === recruitId);
   if (!recruit || recruit.ownerId !== CURRENT_OWNER_ID) return;
   const participant = recruit.participants.find(p => p.characterId === characterId);
@@ -399,11 +524,16 @@ function moveParticipant(recruitId, characterId, direction) {
   const a = indexes[pos].i;
   const b = indexes[targetPos].i;
   [recruit.participants[a], recruit.participants[b]] = [recruit.participants[b], recruit.participants[a]];
-  save();
-  openParticipantList(recruitId);
+  try {
+    await postSharedData({ action: 'updateParties', recruitId, userId: CURRENT_OWNER_ID, participants: partyUpdatePayload(recruit) });
+    openParticipantList(recruitId);
+  } catch (err) {
+    showToast(err.message || '순서를 변경하지 못했습니다.');
+    await readSharedData({ silent: true });
+  }
 }
 
-function switchParticipantParty(recruitId, characterId, targetParty) {
+async function switchParticipantParty(recruitId, characterId, targetParty) {
   const recruit = state.recruits.find(r => r.id === recruitId);
   if (!recruit || recruit.ownerId !== CURRENT_OWNER_ID) return;
   const targetCount = recruit.participants.filter(p => (p.party || 1) === targetParty).length;
@@ -411,11 +541,15 @@ function switchParticipantParty(recruitId, characterId, targetParty) {
   const participant = recruit.participants.find(p => p.characterId === characterId);
   if (!participant) return;
   participant.party = targetParty;
-  // 해당 파티 끝으로 이동
   recruit.participants = recruit.participants.filter(p => p.characterId !== characterId);
   recruit.participants.push(participant);
-  save();
-  openParticipantList(recruitId);
+  try {
+    await postSharedData({ action: 'updateParties', recruitId, userId: CURRENT_OWNER_ID, participants: partyUpdatePayload(recruit) });
+    openParticipantList(recruitId);
+  } catch (err) {
+    showToast(err.message || '파티를 변경하지 못했습니다.');
+    await readSharedData({ silent: true });
+  }
 }
 
 function getRecruitThemeClass(dungeon) {
@@ -425,31 +559,38 @@ function getRecruitThemeClass(dungeon) {
   return '';
 }
 
-function deleteRecruit(recruitId) {
+async function deleteRecruit(recruitId) {
   const recruit = state.recruits.find(r => r.id === recruitId);
-  if (!recruit) return;
+  if (!recruit || recruit.ownerId !== CURRENT_OWNER_ID) return;
   if (!window.confirm(`'${recruit.dungeon}' 모집을 삭제할까요?`)) return;
-  delete state.applications[recruitId];
-  state.recruits = state.recruits.filter(r => r.id !== recruitId);
-  state.activities.unshift({ text: `${recruit.dungeon} 모집이 삭제되었습니다.`, time: '방금 전' });
-  save();
-  render();
-  showToast('모집을 삭제했습니다.');
+  try {
+    await postSharedData({ action: 'deleteRecruit', recruitId, userId: CURRENT_OWNER_ID });
+    showToast('모집을 삭제했습니다.');
+  } catch (err) {
+    showToast(err.message || '모집을 삭제하지 못했습니다.');
+  }
 }
 
 function setRepresentative(characterId) {
+  if (!state.characters.some(c => c.id === characterId)) return;
+  localStorage.setItem(REPRESENTATIVE_KEY, characterId);
   state.characters.forEach(c => c.representative = c.id === characterId);
-  save(); render(); showToast('대표 캐릭터를 변경했습니다.');
+  render();
+  showToast('대표 캐릭터를 변경했습니다.');
 }
 
-function deleteCharacter(characterId) {
+async function deleteCharacter(characterId) {
   const character = state.characters.find(c => c.id === characterId);
   if (!character) return;
   const isInUse = Object.values(state.applications).some(a => a.characterId === characterId);
   if (isInUse) { showToast('현재 성역 신청에 사용 중인 캐릭터는 삭제할 수 없습니다.'); return; }
-  state.characters = state.characters.filter(c => c.id !== characterId);
-  if (state.characters.length && !state.characters.some(c => c.representative)) state.characters[0].representative = true;
-  save(); render(); showToast(`${character.name} 캐릭터를 삭제했습니다.`);
+  try {
+    await postSharedData({ action: 'deleteCharacter', characterId, userId: CURRENT_OWNER_ID });
+    if (localStorage.getItem(REPRESENTATIVE_KEY) === characterId) localStorage.removeItem(REPRESENTATIVE_KEY);
+    showToast(`${character.name} 캐릭터를 삭제했습니다.`);
+  } catch (err) {
+    showToast(err.message || '캐릭터를 삭제하지 못했습니다.');
+  }
 }
 
 function setFilter(filter) {
@@ -550,35 +691,40 @@ function openJoin(recruitId) {
   modalContent.querySelector('#confirm-join').addEventListener('click', confirmJoin);
 }
 
-function confirmJoin() {
+async function confirmJoin() {
   const input = modalContent.querySelector('input[name="join-character"]:checked');
   if (!input) return;
   const character = state.characters.find(c => c.id === input.value);
   const recruit = state.recruits.find(r => r.id === state.selectedRecruit);
   if (!character || !recruit || recruit.current >= recruit.max) return;
-  const joinedAt = Date.now();
-  state.applications[recruit.id] = { characterId: character.id, characterName: character.name, className: character.className, at: joinedAt };
-  if (!Array.isArray(recruit.participants)) recruit.participants = [];
-  if (!recruit.participants.some(p => p.characterId === character.id)) {
-    const party = recruit.participants.filter(p => (p.party || 1) === 1).length < 5 ? 1 : 2;
-    recruit.participants.push({ characterId: character.id, characterName: character.name, className: character.className, at: joinedAt, party });
+  try {
+    await postSharedData({
+      action: 'joinRecruit',
+      participantId: crypto.randomUUID(),
+      recruitId: recruit.id,
+      userId: CURRENT_OWNER_ID,
+      characterId: character.id,
+      characterName: character.name,
+      className: character.className,
+    });
+    closeModal();
+    showToast(`${character.name} 캐릭터로 신청했습니다.`);
+  } catch (err) {
+    showToast(err.message || '참여 신청을 하지 못했습니다.');
   }
-  recruit.current = recruit.participants.length;
-  state.activities.unshift({ text: `${character.name}님이 ${recruit.dungeon} 파티에 참여했습니다.`, time: '방금 전' });
-  save(); closeModal(); render(); showToast(`${character.name} 캐릭터로 신청했습니다.`);
 }
 
-function cancelJoin(recruitId) {
+async function cancelJoin(recruitId) {
   const app = state.applications[recruitId];
   const recruit = state.recruits.find(r => r.id === recruitId);
   if (recruit && isRecruitCompleted(recruit)) { showToast('완료된 모집에서는 참여 취소를 할 수 없습니다.'); render(); return; }
   if (!app || !recruit) return;
-  delete state.applications[recruitId];
-  if (!Array.isArray(recruit.participants)) recruit.participants = [];
-  recruit.participants = recruit.participants.filter(p => p.characterId !== app.characterId);
-  recruit.current = recruit.participants.length;
-  state.activities.unshift({ text: `${app.characterName}님이 ${recruit.dungeon} 파티 참여를 취소했습니다.`, time: '방금 전' });
-  save(); render(); showToast('참여를 취소했습니다.');
+  try {
+    await postSharedData({ action: 'cancelJoin', recruitId, userId: CURRENT_OWNER_ID });
+    showToast('참여를 취소했습니다.');
+  } catch (err) {
+    showToast(err.message || '참여를 취소하지 못했습니다.');
+  }
 }
 
 function openCharacterModal() {
@@ -590,14 +736,20 @@ function openCharacterModal() {
   </div><div class="modal-actions"><button class="ghost-btn" data-modal-cancel>취소</button><button class="primary-btn" id="save-character">추가하기</button></div>`);
   modal.classList.add('recruit-modal-clean', 'character-modal-clean');
   modalContent.querySelector('[data-modal-cancel]').addEventListener('click', closeModal);
-  modalContent.querySelector('#save-character').addEventListener('click', () => {
+  modalContent.querySelector('#save-character').addEventListener('click', async () => {
     const name = modalContent.querySelector('#character-name').value.trim();
     const className = modalContent.querySelector('#character-class').value;
-    const representative = modalContent.querySelector('#representative').checked;
+    const representative = modalContent.querySelector('#representative').checked || state.characters.length === 0;
     if (!name) { showToast('캐릭터명을 입력해주세요.'); return; }
-    if (representative) state.characters.forEach(c => c.representative = false);
-    state.characters.push({ id: crypto.randomUUID(), name, className, representative: representative || state.characters.length === 0 });
-    save(); closeModal(); render(); showToast('캐릭터를 추가했습니다.');
+    const characterId = crypto.randomUUID();
+    try {
+      await postSharedData({ action: 'createCharacter', characterId, userId: CURRENT_OWNER_ID, name, className, representative });
+      if (representative) localStorage.setItem(REPRESENTATIVE_KEY, characterId);
+      closeModal();
+      showToast('캐릭터를 추가했습니다.');
+    } catch (err) {
+      showToast(err.message || '캐릭터를 추가하지 못했습니다.');
+    }
   });
 }
 
@@ -718,17 +870,21 @@ function openRecruitModal() {
   });
 
   modalContent.querySelector('[data-modal-cancel]').addEventListener('click', closeModal);
-  modalContent.querySelector('#save-recruit').addEventListener('click', () => {
+  modalContent.querySelector('#save-recruit').addEventListener('click', async () => {
     const dungeon = modalContent.querySelector('#new-dungeon').value;
     const date = dateInput.value;
     const time = timeInput.value;
     const memo = memoInput.value.trim();
     if (!date) { showToast('날짜를 선택해주세요.'); dateInput.focus(); return; }
     if (!time) { showToast('시간을 선택해주세요.'); hourSelect.focus(); return; }
-    state.recruits.unshift({ id: crypto.randomUUID(), dungeon, date, time, memo, current: 0, max: 10, ownerId: CURRENT_OWNER_ID, participants: [] });
-    state.activities.unshift({ text: `${dungeon} 모집이 등록되었습니다.`, time: '방금 전' });
-    clearRecruitDraft();
-    save(); closeModal(); render(); showToast('모집을 등록했습니다.');
+    try {
+      await postSharedData({ action: 'createRecruit', recruitId: crypto.randomUUID(), ownerId: CURRENT_OWNER_ID, dungeon, date, time, memo });
+      clearRecruitDraft();
+      closeModal();
+      showToast('모집을 등록했습니다.');
+    } catch (err) {
+      showToast(err.message || '모집을 등록하지 못했습니다.');
+    }
   });
 }
 
@@ -744,6 +900,8 @@ function showToast(text) {
 }
 
 render();
-setInterval(() => {
-  if (state.currentView === 'recruit') render();
-}, 30000);
+readSharedData();
+setInterval(() => readSharedData({ silent: true }), 30000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) readSharedData({ silent: true });
+});
