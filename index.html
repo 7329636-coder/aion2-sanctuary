@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AION2 레기온 푸딩 / 지배 · 성역 모집</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <img src="assets/brand/aion2-logo-transparent.png" alt="AION2" class="brand-logo" />
+        <div class="brand-copy">
+          <strong>레기온 푸딩 / 지배</strong>
+          <span>성역 파티 모집</span>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" aria-label="주요 메뉴">
+        <button class="nav-tab active" data-view="recruit">성역 모집</button>
+        <button class="nav-tab" data-view="characters">내 캐릭터</button>
+        <button class="nav-tab" data-view="applications">내 신청</button>
+      </nav>
+
+      <div class="top-actions">
+        <button class="icon-btn" id="notification-btn" title="알림" aria-label="알림">🔔</button>
+        <div class="profile-wrap">
+          <button class="profile-btn" id="profile-btn" aria-expanded="false">내 계정 ▾</button>
+          <div class="profile-menu hidden" id="profile-menu">
+            <button data-go-view="characters">내 캐릭터 관리</button>
+            <button data-go-view="applications">내 신청 목록</button>
+            <div class="profile-menu-note">현재는 이 브라우저에 정보가 저장됩니다.</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="view-panel active" id="view-recruit" data-view-panel="recruit">
+        <section class="hero">
+          <div class="hero-title-wrap">
+            <img src="assets/brand/sanctuary-icon-transparent.png" class="hero-icon" alt="성역 아이콘" />
+            <div>
+              <h1>성역 모집</h1>
+              <p>오늘 같이 갈 성역을 확인하고, 원하는 캐릭터로 바로 신청하세요.</p>
+            </div>
+          </div>
+          <button class="primary-btn create-recruit-btn">+ 모집 만들기</button>
+        </section>
+
+        <section class="dungeon-grid" aria-label="성역 선택">
+
+          <button class="dungeon-card erosion-card" data-filter="침식" style="--bg:url('assets/dungeons/erosion.jpg')">
+            <div class="card-overlay"></div>
+            <div class="card-content">
+              <span class="eyebrow">SANCTUARY</span>
+              <h2>침식</h2>
+              <p><b id="count-erosion">0</b>건 모집 중</p>
+            </div>
+            <span class="card-arrow">→</span>
+          </button>
+
+          <button class="dungeon-card muspel-normal-card" data-filter="무스펠 보통" style="--bg:url('assets/dungeons/muspel.jpg')">
+            <div class="card-overlay"></div>
+            <div class="card-content">
+              <span class="difficulty normal">보통</span>
+              <h2>무스펠</h2>
+              <p><b id="count-muspel-normal">0</b>건 모집 중</p>
+            </div>
+            <span class="card-arrow">→</span>
+          </button>
+
+          <button class="dungeon-card hard-card" data-filter="무스펠 어려움" style="--bg:url('assets/dungeons/muspel.jpg')">
+            <div class="card-overlay"></div>
+            <div class="card-content">
+              <span class="difficulty hard">어려움</span>
+              <h2>무스펠</h2>
+              <p><b id="count-muspel-hard">0</b>건 모집 중</p>
+            </div>
+            <span class="card-arrow">→</span>
+          </button>
+        </section>
+
+        <section class="dashboard-grid">
+          <div class="panel recruit-panel">
+            <div class="panel-head recruit-panel-head">
+              <div>
+                <h3 id="recruit-panel-title">현재 모집 중</h3>
+                <p id="recruit-panel-desc">참여할 파티를 선택하세요.</p>
+              </div>
+              <div class="recruit-head-controls">
+                <div class="recruit-status-tabs" aria-label="모집 상태">
+                  <button class="recruit-status-tab active" data-recruit-status="active">모집 중</button>
+                  <button class="recruit-status-tab" data-recruit-status="completed">완료</button>
+                </div>
+                <div class="filters" id="filters">
+                <button class="filter active" data-filter="전체">전체</button>
+                                <button class="filter" data-filter="침식">침식</button>
+                <button class="filter" data-filter="무스펠 보통">무스펠 보통</button>
+                <button class="filter" data-filter="무스펠 어려움">무스펠 어려움</button>
+                </div>
+              </div>
+            </div>
+            <div id="recruit-list" class="recruit-list"></div>
+          </div>
+
+          <aside class="side-stack">
+            <div class="panel side-panel">
+              <div class="panel-head compact">
+                <div>
+                  <h3>내 캐릭터</h3>
+                  <p>신청할 캐릭터를 선택할 수 있습니다.</p>
+                </div>
+                <button class="text-btn" id="manage-characters">관리</button>
+              </div>
+              <div id="character-list" class="character-list"></div>
+              <button class="outline-btn full" id="add-character">+ 캐릭터 추가</button>
+            </div>
+
+            <div class="panel side-panel">
+              <div class="panel-head compact">
+                <div>
+                  <h3>최근 활동</h3>
+                  <p>신청·취소 기록</p>
+                </div>
+              </div>
+              <div id="activity-list" class="activity-list"></div>
+            </div>
+          </aside>
+        </section>
+      </section>
+
+      <section class="view-panel" id="view-characters" data-view-panel="characters">
+        <div class="page-heading">
+          <div>
+            <span class="page-kicker">MY CHARACTERS</span>
+            <h1>내 캐릭터</h1>
+            <p>성역 신청에 사용할 캐릭터를 등록하고 대표 캐릭터를 관리하세요.</p>
+          </div>
+          <button class="primary-btn" id="add-character-page">+ 캐릭터 추가</button>
+        </div>
+        <div class="panel page-panel">
+          <div id="characters-page-list" class="characters-page-list"></div>
+        </div>
+      </section>
+
+      <section class="view-panel" id="view-applications" data-view-panel="applications">
+        <div class="page-heading">
+          <div>
+            <span class="page-kicker">MY APPLICATIONS</span>
+            <h1>내 신청</h1>
+            <p>내가 참여 중인 성역 모집을 확인하고 바로 취소할 수 있습니다.</p>
+          </div>
+          <button class="outline-btn" id="go-recruit-view">성역 모집 보기</button>
+        </div>
+        <div class="panel page-panel">
+          <div id="applications-page-list" class="applications-page-list"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modal-backdrop" aria-hidden="true">
+    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="modal-close" id="modal-close" aria-label="닫기">×</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
