@@ -1429,3 +1429,40 @@ body::before { display: none; }
   .completed-party-btn, .compact-delete-btn { flex: 1; }
   .participant-modal .party-member-list { min-height: 0; }
 }
+
+
+/* v16 완료/모집중 상단 컨트롤 위치 통일 */
+.recruit-panel-head {
+  align-items: flex-start !important;
+}
+.recruit-head-controls {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+}
+.recruit-status-tabs {
+  align-self: flex-end !important;
+}
+.recruit-head-controls .filters {
+  justify-content: flex-end !important;
+}
+.recruit-panel.completed-mode #recruit-panel-desc {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  max-width: 430px;
+}
+@media (max-width: 980px) {
+  .recruit-head-controls {
+    width: 100% !important;
+    align-items: flex-start !important;
+  }
+  .recruit-status-tabs {
+    align-self: flex-start !important;
+  }
+  .recruit-head-controls .filters {
+    justify-content: flex-start !important;
+  }
+}
