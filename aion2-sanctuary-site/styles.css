@@ -1770,3 +1770,247 @@ body::before { display: none; }
   .home-character-column { grid-row: 2 !important; }
   .home-main-grid > .activity-wide-panel { grid-row: 3 !important; }
 }
+
+
+/* =========================================================
+   홈 레이아웃 최종: 현재 모집 중 : 내 캐릭터 = 2 : 1
+   최근 활동 = 두 영역 아래 전체 너비
+   ========================================================= */
+.home-main-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr) !important;
+  gap: 20px !important;
+  align-items: start !important;
+}
+
+.home-main-grid > .recruit-panel {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  min-width: 0 !important;
+}
+
+.home-character-column {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  min-width: 0 !important;
+  display: block !important;
+}
+
+.home-main-grid > .activity-wide-panel {
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+
+/* =========================================================
+   모집 카드: 글자/참여 목록/버튼 겹침 방지
+   1행: 성역+날짜시간 / 현재인원 / 버튼
+   2행: 메모(왼쪽+가운데 폭 사용) / 버튼 유지
+   ========================================================= */
+.home-main-grid .simple-recruit-item.white-recruit-item {
+  display: grid !important;
+  grid-template-columns: minmax(330px, 1fr) minmax(112px, auto) 116px !important;
+  grid-template-areas:
+    "title meta actions"
+    "note  note actions" !important;
+  gap: 10px 14px !important;
+  align-items: center !important;
+  padding: 16px 18px !important;
+  min-width: 0 !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-title {
+  grid-area: title !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-title > div {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-meta {
+  grid-area: meta !important;
+  min-width: 112px !important;
+  display: grid !important;
+  gap: 4px !important;
+  align-content: center !important;
+  justify-items: start !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-meta .label,
+.home-main-grid .simple-recruit-item .recruit-meta strong {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+.home-main-grid .simple-recruit-item .participant-preview-btn {
+  width: auto !important;
+  max-width: none !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  flex: 0 0 auto !important;
+  padding: 7px 10px !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-note-block {
+  grid-area: note !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 9px 11px !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-note-text {
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: keep-all !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-action-stack {
+  grid-area: actions !important;
+  min-width: 116px !important;
+  width: 116px !important;
+  align-self: stretch !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+.home-main-grid .simple-recruit-item .clean-action-btn,
+.home-main-grid .simple-recruit-item .delete-recruit-btn {
+  width: 116px !important;
+  min-width: 116px !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+
+/* 날짜 + 시간 배지는 가능하면 한 줄 유지 */
+.home-main-grid .recruit-schedule-row {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  max-width: 100% !important;
+}
+
+.home-main-grid .schedule-badge {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+.home-main-grid .schedule-time strong {
+  white-space: nowrap !important;
+}
+
+.home-main-grid .schedule-time small {
+  white-space: nowrap !important;
+}
+
+
+/* 내 캐릭터 글자 보호 */
+.home-character-column .panel-head {
+  min-width: 0 !important;
+}
+
+.home-character-column .character-row {
+  min-width: 0 !important;
+}
+
+.home-character-column .char-copy {
+  min-width: 0 !important;
+}
+
+.home-character-column .char-name,
+.home-character-column .char-class {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+
+/* 중간 폭에서는 날짜/시간만 자연스럽게 줄바꿈.
+   글자 자체는 잘리거나 세로로 깨지지 않게 유지 */
+@media (max-width: 1260px) {
+  .home-main-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr) !important;
+  }
+
+  .home-main-grid .simple-recruit-item.white-recruit-item {
+    grid-template-columns: minmax(280px, 1fr) minmax(108px, auto) 110px !important;
+  }
+
+  .home-main-grid .recruit-schedule-row {
+    flex-wrap: wrap !important;
+  }
+
+  .home-main-grid .simple-recruit-item .recruit-action-stack,
+  .home-main-grid .simple-recruit-item .clean-action-btn,
+  .home-main-grid .simple-recruit-item .delete-recruit-btn {
+    width: 110px !important;
+    min-width: 110px !important;
+  }
+}
+
+
+/* 화면이 더 좁으면 2:1을 억지로 유지하지 않고 세로 배치 */
+@media (max-width: 1020px) {
+  .home-main-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .home-main-grid > .recruit-panel {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+
+  .home-character-column {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+  }
+
+  .home-main-grid > .activity-wide-panel {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+  }
+}
+
+
+/* 모바일에서는 모집 카드도 한 칸씩 */
+@media (max-width: 760px) {
+  .home-main-grid .simple-recruit-item.white-recruit-item {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "title"
+      "meta"
+      "note"
+      "actions" !important;
+  }
+
+  .home-main-grid .simple-recruit-item .recruit-action-stack {
+    width: 100% !important;
+    min-width: 0 !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .home-main-grid .simple-recruit-item .clean-action-btn,
+  .home-main-grid .simple-recruit-item .delete-recruit-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .home-main-grid .recruit-schedule-row {
+    flex-wrap: wrap !important;
+  }
+}
