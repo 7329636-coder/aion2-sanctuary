@@ -2014,3 +2014,114 @@ body::before { display: none; }
     flex-wrap: wrap !important;
   }
 }
+
+
+/* =========================================================
+   홈 최종 배치
+   왼쪽: 현재 모집 중 (2)
+   오른쪽: 내 캐릭터 + 최근 활동 세로 스택 (1)
+   왼쪽 높이 = 오른쪽 두 패널을 합친 전체 높이
+   ========================================================= */
+.home-main-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr) !important;
+  grid-template-rows: auto !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+}
+
+.home-main-grid > .recruit-panel {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  min-width: 0 !important;
+  height: 100% !important;
+}
+
+.home-right-stack {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  gap: 18px !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  align-self: stretch !important;
+  margin: 0 !important;
+}
+
+.home-right-stack .home-character-panel,
+.home-right-stack .home-activity-panel {
+  min-width: 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.home-right-stack .home-activity-panel {
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.home-right-stack .home-activity-panel .activity-list {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+}
+
+/* 이전 '최근 활동 전체 너비' 배치 무효화 */
+.home-main-grid > .activity-wide-panel {
+  display: none !important;
+}
+
+/* 오른쪽 카드 안 글자 보호 */
+.home-right-stack .panel-head,
+.home-right-stack .character-row,
+.home-right-stack .activity-item {
+  min-width: 0 !important;
+}
+
+.home-right-stack .char-copy,
+.home-right-stack .activity-copy {
+  min-width: 0 !important;
+}
+
+.home-right-stack .char-name,
+.home-right-stack .char-class,
+.home-right-stack .activity-copy strong,
+.home-right-stack .activity-copy span {
+  overflow-wrap: anywhere !important;
+  word-break: keep-all !important;
+}
+
+/* 중간 폭 */
+@media (max-width: 1180px) {
+  .home-main-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr) !important;
+  }
+}
+
+/* 좁은 화면에서는 세로 배치 */
+@media (max-width: 1020px) {
+  .home-main-grid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto !important;
+  }
+
+  .home-main-grid > .recruit-panel {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    height: auto !important;
+  }
+
+  .home-right-stack {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    height: auto !important;
+    grid-template-rows: auto auto !important;
+  }
+
+  .home-right-stack .home-activity-panel {
+    min-height: 180px !important;
+  }
+}
