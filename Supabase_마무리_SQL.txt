@@ -1,0 +1,47 @@
+-- 아이온2 성역 모집 사이트 - Supabase 마무리 설정
+
+-- 브라우저에서 로그인된(익명 로그인 포함) 사용자가
+-- RLS 정책 범위 안에서 테이블을 사용할 수 있게 권한을 명시합니다.
+grant select, insert, update, delete on table public.characters to authenticated;
+grant select, insert, update, delete on table public.recruits to authenticated;
+grant select, insert, update, delete on table public.participants to authenticated;
+
+-- 파티 이동/순서 변경은 모집 작성자만 가능하도록 강화합니다.
+drop policy if exists "participants update" on public.participants;
+drop policy if exists "participants update by recruit owner" on public.participants;
+
+create policy "participants update by recruit owner"
+on public.participants
+for update
+to authenticated
+using (
+  exists (
+    select 1
+    from public.recruits r
+    where r.id = recruit_id
+      and r.owner_id = auth.uid()
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.recruits r
+    where r.id = recruit_id
+      and r.owner_id = auth.uid()
+  )
+);
+
+-- 완료 후 7일이 지난 모집과 참여 기록을 실제 DB에서도 자동 정리할 함수입니다.
+create or replace function public.cleanup_expired_recruits()
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  delete from public.recruits
+  where ((recruit_date + recruit_time) at time zone 'Asia/Seoul')
+        <= now() - interval '7 days';
+$$;
+
+revoke all on function public.cleanup_expired_recruits() from public;
+grant execute on function public.cleanup_expired_recruits() to authenticated;

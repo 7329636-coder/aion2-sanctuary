@@ -30,7 +30,7 @@
           <div class="profile-menu hidden" id="profile-menu">
             <button data-go-view="characters">내 캐릭터 관리</button>
             <button data-go-view="applications">내 신청 목록</button>
-            <div class="profile-menu-note">현재는 이 브라우저에 정보가 저장됩니다.</div>
+            <div class="profile-menu-note">현재 기기별로 내 계정이 구분됩니다.</div>
           </div>
         </div>
       </div>
@@ -54,7 +54,6 @@
           <button class="dungeon-card erosion-card" data-filter="침식" style="--bg:url('assets/dungeons/erosion.jpg')">
             <div class="card-overlay"></div>
             <div class="card-content">
-              <span class="eyebrow">SANCTUARY</span>
               <h2>침식</h2>
               <p><b id="count-erosion">0</b>건 모집 중</p>
             </div>
@@ -83,6 +82,29 @@
         </section>
 
         <section class="dashboard-grid">
+          <aside class="side-stack home-top-stack">
+            <div class="panel side-panel home-character-panel">
+              <div class="panel-head compact">
+                <div>
+                  <h3>내 캐릭터</h3>
+                  <p>신청할 캐릭터를 선택할 수 있습니다.</p>
+                </div>
+                <button class="text-btn" id="manage-characters">관리</button>
+              </div>
+              <div id="character-list" class="character-list"></div>
+              <button class="outline-btn full" id="add-character">+ 캐릭터 추가</button>
+            </div>
+
+            <div class="usage-guide-panel" aria-label="성역 모집 사용방법">
+              <div class="usage-guide-title"><span class="usage-guide-icon">i</span><div><strong>처음 이용하시나요?</strong><span>성역 모집 이용방법</span></div></div>
+              <div class="usage-step"><span>1</span><div><strong>캐릭터 등록</strong><p>먼저 + 캐릭터 추가에서 캐릭터를 등록해주세요.</p></div></div>
+              <div class="usage-step"><span>2</span><div><strong>모집 참여</strong><p>원하는 성역 모집에서 참여할 캐릭터를 선택해주세요.</p></div></div>
+              <div class="usage-step"><span>3</span><div><strong>모집 만들기</strong><p>날짜와 시간을 선택해 직접 모집을 만들 수 있습니다.</p></div></div>
+              <div class="usage-step"><span>4</span><div><strong>참여 목록 확인</strong><p>참여 인원과 1파티 / 2파티 구성을 확인할 수 있습니다.</p></div></div>
+              <div class="usage-tip"><strong>TIP</strong><span>부캐릭터로 참여하면 대표 캐릭터명이 함께 표시됩니다. 예: 뚀봉 (쇼봉)</span></div>
+            </div>
+          </aside>
+
           <div class="panel recruit-panel">
             <div class="panel-head recruit-panel-head">
               <div>
@@ -95,39 +117,25 @@
                   <button class="recruit-status-tab" data-recruit-status="completed">완료</button>
                 </div>
                 <div class="filters" id="filters">
-                <button class="filter active" data-filter="전체">전체</button>
-                                <button class="filter" data-filter="침식">침식</button>
-                <button class="filter" data-filter="무스펠 보통">무스펠 보통</button>
-                <button class="filter" data-filter="무스펠 어려움">무스펠 어려움</button>
+                  <button class="filter active" data-filter="전체">전체</button>
+                  <button class="filter" data-filter="침식">침식</button>
+                  <button class="filter" data-filter="무스펠 보통">무스펠 보통</button>
+                  <button class="filter" data-filter="무스펠 어려움">무스펠 어려움</button>
                 </div>
               </div>
             </div>
             <div id="recruit-list" class="recruit-list"></div>
           </div>
 
-          <aside class="side-stack">
-            <div class="panel side-panel">
-              <div class="panel-head compact">
-                <div>
-                  <h3>내 캐릭터</h3>
-                  <p>신청할 캐릭터를 선택할 수 있습니다.</p>
-                </div>
-                <button class="text-btn" id="manage-characters">관리</button>
+          <div class="panel side-panel activity-wide-panel">
+            <div class="panel-head compact">
+              <div>
+                <h3>최근 활동</h3>
+                <p>신청·취소 기록</p>
               </div>
-              <div id="character-list" class="character-list"></div>
-              <button class="outline-btn full" id="add-character">+ 캐릭터 추가</button>
             </div>
-
-            <div class="panel side-panel">
-              <div class="panel-head compact">
-                <div>
-                  <h3>최근 활동</h3>
-                  <p>신청·취소 기록</p>
-                </div>
-              </div>
-              <div id="activity-list" class="activity-list"></div>
-            </div>
-          </aside>
+            <div id="activity-list" class="activity-list"></div>
+          </div>
         </section>
       </section>
 
@@ -168,6 +176,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 </body>
 </html>
