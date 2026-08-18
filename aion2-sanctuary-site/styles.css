@@ -858,7 +858,6 @@ body::before { display: none; }
   border-radius: 12px;
 }
 .white-empty-state { min-height: 210px; }
-.theme-rudra { border-left: 4px solid #a879e0; }
 .theme-erosion { border-left: 4px solid #59c3ae; }
 .theme-muspel-normal { border-left: 4px solid #58b7ef; }
 .theme-muspel-hard { border-left: 4px solid #e77d73; }
@@ -1226,7 +1225,7 @@ body::before { display: none; }
   margin-top: 18px;
 }
 
-/* v16 루드라 제거 후 3개 카드 정렬 */
+/* 3개 성역 카드 정렬 */
 .dungeon-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
