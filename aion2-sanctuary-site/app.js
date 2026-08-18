@@ -236,9 +236,27 @@ async function postSharedData(payload) {
   });
   const data = await response.json();
   if (!response.ok || !data.ok) throw new Error(data.error || '저장하지 못했습니다.');
-  saveSharedCache(data);
-  applySharedData(data, { force: true });
+
+  // 새 Apps Script는 저장 성공 여부만 빠르게 반환합니다.
+  // 이전 Apps Script처럼 전체 데이터를 반환해도 그대로 호환됩니다.
+  if (Array.isArray(data.recruits)) {
+    saveSharedCache(data);
+    applySharedData(data, { force: true });
+  }
   return data;
+}
+
+function postSharedInBackground(payload, failureText) {
+  postSharedData(payload)
+    .then(() => {
+      // 다른 브라우저와 최종 상태를 맞추기 위해 잠시 후 조용히 동기화합니다.
+      setTimeout(() => readSharedData({ silent: true }), 700);
+    })
+    .catch(async err => {
+      console.error(err);
+      showToast(err.message || failureText || '저장하지 못했습니다.');
+      await readSharedData({ silent: true });
+    });
 }
 
 function partyUpdatePayload(recruit) {
@@ -566,13 +584,11 @@ async function moveParticipant(recruitId, characterId, direction) {
   const a = indexes[pos].i;
   const b = indexes[targetPos].i;
   [recruit.participants[a], recruit.participants[b]] = [recruit.participants[b], recruit.participants[a]];
-  try {
-    await postSharedData({ action: 'updateParties', recruitId, userId: CURRENT_OWNER_ID, participants: partyUpdatePayload(recruit) });
-    openParticipantList(recruitId);
-  } catch (err) {
-    showToast(err.message || '순서를 변경하지 못했습니다.');
-    await readSharedData({ silent: true });
-  }
+  openParticipantList(recruitId);
+  postSharedInBackground(
+    { action: 'updateParties', recruitId, userId: CURRENT_OWNER_ID, participants: partyUpdatePayload(recruit) },
+    '순서를 변경하지 못했습니다.'
+  );
 }
 
 async function switchParticipantParty(recruitId, characterId, targetParty) {
@@ -585,13 +601,11 @@ async function switchParticipantParty(recruitId, characterId, targetParty) {
   participant.party = targetParty;
   recruit.participants = recruit.participants.filter(p => p.characterId !== characterId);
   recruit.participants.push(participant);
-  try {
-    await postSharedData({ action: 'updateParties', recruitId, userId: CURRENT_OWNER_ID, participants: partyUpdatePayload(recruit) });
-    openParticipantList(recruitId);
-  } catch (err) {
-    showToast(err.message || '파티를 변경하지 못했습니다.');
-    await readSharedData({ silent: true });
-  }
+  openParticipantList(recruitId);
+  postSharedInBackground(
+    { action: 'updateParties', recruitId, userId: CURRENT_OWNER_ID, participants: partyUpdatePayload(recruit) },
+    '파티를 변경하지 못했습니다.'
+  );
 }
 
 function getRecruitThemeClass(dungeon) {
@@ -605,12 +619,16 @@ async function deleteRecruit(recruitId) {
   const recruit = state.recruits.find(r => r.id === recruitId);
   if (!recruit || recruit.ownerId !== CURRENT_OWNER_ID) return;
   if (!window.confirm(`'${recruit.dungeon}' 모집을 삭제할까요?`)) return;
-  try {
-    await postSharedData({ action: 'deleteRecruit', recruitId, userId: CURRENT_OWNER_ID });
-    showToast('모집을 삭제했습니다.');
-  } catch (err) {
-    showToast(err.message || '모집을 삭제하지 못했습니다.');
-  }
+
+  state.recruits = state.recruits.filter(r => r.id !== recruitId);
+  delete state.applications[recruitId];
+  render();
+  showToast('모집을 삭제했습니다.');
+
+  postSharedInBackground(
+    { action: 'deleteRecruit', recruitId, userId: CURRENT_OWNER_ID },
+    '모집을 삭제하지 못했습니다.'
+  );
 }
 
 function setRepresentative(characterId) {
@@ -626,13 +644,20 @@ async function deleteCharacter(characterId) {
   if (!character) return;
   const isInUse = Object.values(state.applications).some(a => a.characterId === characterId);
   if (isInUse) { showToast('현재 성역 신청에 사용 중인 캐릭터는 삭제할 수 없습니다.'); return; }
-  try {
-    await postSharedData({ action: 'deleteCharacter', characterId, userId: CURRENT_OWNER_ID });
-    if (localStorage.getItem(REPRESENTATIVE_KEY) === characterId) localStorage.removeItem(REPRESENTATIVE_KEY);
-    showToast(`${character.name} 캐릭터를 삭제했습니다.`);
-  } catch (err) {
-    showToast(err.message || '캐릭터를 삭제하지 못했습니다.');
+
+  state.characters = state.characters.filter(c => c.id !== characterId);
+  if (localStorage.getItem(REPRESENTATIVE_KEY) === characterId) localStorage.removeItem(REPRESENTATIVE_KEY);
+  if (state.characters.length && !state.characters.some(c => c.representative)) {
+    state.characters[0].representative = true;
+    localStorage.setItem(REPRESENTATIVE_KEY, state.characters[0].id);
   }
+  render();
+  showToast(`${character.name} 캐릭터를 삭제했습니다.`);
+
+  postSharedInBackground(
+    { action: 'deleteCharacter', characterId, userId: CURRENT_OWNER_ID },
+    '캐릭터를 삭제하지 못했습니다.'
+  );
 }
 
 function setFilter(filter) {
@@ -739,21 +764,45 @@ async function confirmJoin() {
   const character = state.characters.find(c => c.id === input.value);
   const recruit = state.recruits.find(r => r.id === state.selectedRecruit);
   if (!character || !recruit || recruit.current >= recruit.max) return;
-  try {
-    await postSharedData({
-      action: 'joinRecruit',
-      participantId: crypto.randomUUID(),
-      recruitId: recruit.id,
-      userId: CURRENT_OWNER_ID,
-      characterId: character.id,
-      characterName: character.name,
-      className: character.className,
-    });
-    closeModal();
-    showToast(`${character.name} 캐릭터로 신청했습니다.`);
-  } catch (err) {
-    showToast(err.message || '참여 신청을 하지 못했습니다.');
-  }
+
+  const participantId = crypto.randomUUID();
+  const party = recruit.participants.filter(p => (p.party || 1) === 1).length < 5 ? 1 : 2;
+  const order = recruit.participants.filter(p => (p.party || 1) === party).length + 1;
+  const participant = {
+    id: participantId,
+    recruitId: recruit.id,
+    userId: CURRENT_OWNER_ID,
+    characterId: character.id,
+    characterName: character.name,
+    className: character.className,
+    party,
+    order,
+    createdAt: new Date().toISOString(),
+  };
+
+  recruit.participants.push(participant);
+  recruit.current = recruit.participants.length;
+  state.applications[recruit.id] = {
+    participantId,
+    characterId: character.id,
+    characterName: character.name,
+    className: character.className,
+    at: participant.createdAt,
+  };
+
+  closeModal();
+  render();
+  showToast(`${character.name} 캐릭터로 신청했습니다.`);
+
+  postSharedInBackground({
+    action: 'joinRecruit',
+    participantId,
+    recruitId: recruit.id,
+    userId: CURRENT_OWNER_ID,
+    characterId: character.id,
+    characterName: character.name,
+    className: character.className,
+  }, '참여 신청을 하지 못했습니다.');
 }
 
 async function cancelJoin(recruitId) {
@@ -761,12 +810,17 @@ async function cancelJoin(recruitId) {
   const recruit = state.recruits.find(r => r.id === recruitId);
   if (recruit && isRecruitCompleted(recruit)) { showToast('완료된 모집에서는 참여 취소를 할 수 없습니다.'); render(); return; }
   if (!app || !recruit) return;
-  try {
-    await postSharedData({ action: 'cancelJoin', recruitId, userId: CURRENT_OWNER_ID });
-    showToast('참여를 취소했습니다.');
-  } catch (err) {
-    showToast(err.message || '참여를 취소하지 못했습니다.');
-  }
+
+  recruit.participants = recruit.participants.filter(p => p.userId !== CURRENT_OWNER_ID);
+  recruit.current = recruit.participants.length;
+  delete state.applications[recruitId];
+  render();
+  showToast('참여를 취소했습니다.');
+
+  postSharedInBackground(
+    { action: 'cancelJoin', recruitId, userId: CURRENT_OWNER_ID },
+    '참여를 취소하지 못했습니다.'
+  );
 }
 
 function openCharacterModal() {
@@ -784,14 +838,26 @@ function openCharacterModal() {
     const representative = modalContent.querySelector('#representative').checked || state.characters.length === 0;
     if (!name) { showToast('캐릭터명을 입력해주세요.'); return; }
     const characterId = crypto.randomUUID();
-    try {
-      await postSharedData({ action: 'createCharacter', characterId, userId: CURRENT_OWNER_ID, name, className, representative });
-      if (representative) localStorage.setItem(REPRESENTATIVE_KEY, characterId);
-      closeModal();
-      showToast('캐릭터를 추가했습니다.');
-    } catch (err) {
-      showToast(err.message || '캐릭터를 추가하지 못했습니다.');
+    if (representative) {
+      state.characters.forEach(c => c.representative = false);
+      localStorage.setItem(REPRESENTATIVE_KEY, characterId);
     }
+    state.characters.push({
+      id: characterId,
+      userId: CURRENT_OWNER_ID,
+      name,
+      className,
+      representative,
+      createdAt: new Date().toISOString(),
+    });
+    closeModal();
+    render();
+    showToast('캐릭터를 추가했습니다.');
+
+    postSharedInBackground(
+      { action: 'createCharacter', characterId, userId: CURRENT_OWNER_ID, name, className, representative },
+      '캐릭터를 추가하지 못했습니다.'
+    );
   });
 }
 
@@ -919,14 +985,28 @@ function openRecruitModal() {
     const memo = memoInput.value.trim();
     if (!date) { showToast('날짜를 선택해주세요.'); dateInput.focus(); return; }
     if (!time) { showToast('시간을 선택해주세요.'); hourSelect.focus(); return; }
-    try {
-      await postSharedData({ action: 'createRecruit', recruitId: crypto.randomUUID(), ownerId: CURRENT_OWNER_ID, dungeon, date, time, memo });
-      clearRecruitDraft();
-      closeModal();
-      showToast('모집을 등록했습니다.');
-    } catch (err) {
-      showToast(err.message || '모집을 등록하지 못했습니다.');
-    }
+    const recruitId = crypto.randomUUID();
+    state.recruits.unshift({
+      id: recruitId,
+      ownerId: CURRENT_OWNER_ID,
+      dungeon,
+      date,
+      time,
+      memo,
+      createdAt: new Date().toISOString(),
+      participants: [],
+      current: 0,
+      max: 10,
+    });
+    clearRecruitDraft();
+    closeModal();
+    render();
+    showToast('모집을 등록했습니다.');
+
+    postSharedInBackground(
+      { action: 'createRecruit', recruitId, ownerId: CURRENT_OWNER_ID, dungeon, date, time, memo },
+      '모집을 등록하지 못했습니다.'
+    );
   });
 }
 
@@ -949,10 +1029,10 @@ if (cachedSharedData?.ok) {
 }
 readSharedData({ silent: Boolean(cachedSharedData?.ok) });
 
-// 공용 데이터 통신은 60초 간격으로 줄이고, 숨겨진 탭에서는 요청하지 않습니다.
+// 다른 사람의 변경사항은 최대 약 10초 안에 확인하도록 갱신합니다.
 setInterval(() => {
   if (!document.hidden) readSharedData({ silent: true });
-}, 60000);
+}, 10000);
 
 // 완료 전환/남은 기간 표시는 네트워크 요청 없이 화면에서만 갱신합니다.
 setInterval(() => {

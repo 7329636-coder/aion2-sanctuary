@@ -1,0 +1,311 @@
+const TZ = 'Asia/Seoul';
+const MAX_PARTICIPANTS = 10;
+const DUNGEONS = ['침식', '무스펠 보통', '무스펠 어려움'];
+const CACHE_KEY = 'AION2_SHARED_DATA_V2';
+
+const HEADERS = {
+  '모집': ['모집ID','작성자ID','성역','날짜','시간','메모','생성일'],
+  '참여자': ['참여ID','모집ID','사용자ID','캐릭터ID','캐릭터명','직업','파티','순서','신청일'],
+  '캐릭터': ['캐릭터ID','사용자ID','캐릭터명','직업','대표캐릭터','생성일'],
+  '활동': ['활동ID','사용자ID','내용','기록일']
+};
+
+function 초기설정() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', ss.getId());
+
+  Object.entries(HEADERS).forEach(([name, headers]) => {
+    let sheet = ss.getSheetByName(name);
+    if (!sheet) sheet = ss.insertSheet(name);
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.setFrozenRows(1);
+  });
+
+  clearCache_();
+}
+
+function doGet(e) {
+  try {
+    const action = (e && e.parameter && e.parameter.action) || 'all';
+    if (action === 'ping') return json_({ ok: true, message: '연결 성공' });
+
+    const cache = CacheService.getScriptCache();
+    const cached = cache.get(CACHE_KEY);
+    if (cached) return ContentService.createTextOutput(cached).setMimeType(ContentService.MimeType.JSON);
+
+    cleanupExpired_();
+
+    const data = { ok: true, ...readAll_() };
+    const text = JSON.stringify(data);
+
+    // 여러 사람이 동시에 접속해도 매번 시트 전체를 다시 읽지 않도록 짧게 캐시
+    cache.put(CACHE_KEY, text, 5);
+
+    return ContentService.createTextOutput(text).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return json_({ ok: false, error: String(err.message || err) });
+  }
+}
+
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+
+  try {
+    const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+
+    switch (body.action) {
+      case 'createCharacter': createCharacter_(body); break;
+      case 'deleteCharacter': deleteCharacter_(body); break;
+      case 'createRecruit': createRecruit_(body); break;
+      case 'deleteRecruit': deleteRecruit_(body); break;
+      case 'joinRecruit': joinRecruit_(body); break;
+      case 'cancelJoin': cancelJoin_(body); break;
+      case 'updateParties': updateParties_(body); break;
+      default: throw new Error('지원하지 않는 요청입니다.');
+    }
+
+    clearCache_();
+
+    // 저장 뒤 4개 시트를 다시 전부 읽지 않고 바로 성공만 반환
+    return json_({ ok: true });
+
+  } catch (err) {
+    return json_({ ok: false, error: String(err.message || err) });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function clearCache_() {
+  CacheService.getScriptCache().remove(CACHE_KEY);
+}
+
+function createCharacter_(b) {
+  const sheet = sh_('캐릭터');
+  const lastRow = sheet.getLastRow();
+  const rows = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 6).getValues() : [];
+
+  if (rows.some(r => String(r[0]) === String(b.characterId))) return;
+
+  if (b.representative) {
+    rows.forEach((r, i) => {
+      if (String(r[1]) === String(b.userId) && r[4] === true) {
+        sheet.getRange(i + 2, 5).setValue(false);
+      }
+    });
+  }
+
+  const hasCharacter = rows.some(r => String(r[1]) === String(b.userId));
+
+  sheet.appendRow([
+    clean_(b.characterId),
+    clean_(b.userId),
+    clean_(b.name),
+    clean_(b.className),
+    b.representative === true || !hasCharacter,
+    isoNow_()
+  ]);
+}
+
+function deleteCharacter_(b) {
+  deleteMatchingRows_(
+    '캐릭터',
+    r => String(r[0]) === String(b.characterId) && String(r[1]) === String(b.userId)
+  );
+}
+
+function createRecruit_(b) {
+  if (!DUNGEONS.includes(b.dungeon)) throw new Error('지원하지 않는 성역입니다.');
+
+  const sheet = sh_('모집');
+  const lastRow = sheet.getLastRow();
+  const ids = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat() : [];
+  if (ids.some(id => String(id) === String(b.recruitId))) return;
+
+  sheet.appendRow([
+    clean_(b.recruitId),
+    clean_(b.ownerId),
+    clean_(b.dungeon),
+    clean_(b.date),
+    clean_(b.time),
+    clean_(b.memo || '').slice(0, 200),
+    isoNow_()
+  ]);
+}
+
+function deleteRecruit_(b) {
+  const recruit = findRecruit_(b.recruitId);
+  if (!recruit) throw new Error('모집을 찾을 수 없습니다.');
+  if (String(recruit[1]) !== String(b.userId)) throw new Error('모집 작성자만 삭제할 수 있습니다.');
+
+  deleteMatchingRows_('모집', r => String(r[0]) === String(b.recruitId));
+  deleteMatchingRows_('참여자', r => String(r[1]) === String(b.recruitId));
+}
+
+function joinRecruit_(b) {
+  const recruit = findRecruit_(b.recruitId);
+  if (!recruit) throw new Error('모집을 찾을 수 없습니다.');
+  if (isCompleted_(recruit)) throw new Error('이미 완료된 모집입니다.');
+
+  const sheet = sh_('참여자');
+  const lastRow = sheet.getLastRow();
+  const rows = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 9).getValues() : [];
+  const members = rows.filter(r => String(r[1]) === String(b.recruitId));
+
+  if (members.length >= MAX_PARTICIPANTS) throw new Error('모집 인원이 가득 찼습니다.');
+  if (members.some(r => String(r[2]) === String(b.userId))) throw new Error('이미 참여한 모집입니다.');
+
+  const party = members.filter(r => Number(r[6]) === 1).length < 5 ? 1 : 2;
+  const order = members.filter(r => Number(r[6]) === party).length + 1;
+
+  sheet.appendRow([
+    clean_(b.participantId),
+    clean_(b.recruitId),
+    clean_(b.userId),
+    clean_(b.characterId),
+    clean_(b.characterName),
+    clean_(b.className),
+    party,
+    order,
+    isoNow_()
+  ]);
+}
+
+function cancelJoin_(b) {
+  const recruit = findRecruit_(b.recruitId);
+  if (!recruit) throw new Error('모집을 찾을 수 없습니다.');
+  if (isCompleted_(recruit)) throw new Error('완료된 모집에서는 참여 취소를 할 수 없습니다.');
+
+  deleteMatchingRows_(
+    '참여자',
+    r => String(r[1]) === String(b.recruitId) && String(r[2]) === String(b.userId)
+  );
+}
+
+function updateParties_(b) {
+  const recruit = findRecruit_(b.recruitId);
+  if (!recruit) throw new Error('모집을 찾을 수 없습니다.');
+  if (String(recruit[1]) !== String(b.userId)) throw new Error('모집 작성자만 파티를 변경할 수 있습니다.');
+
+  const updates = new Map((b.participants || []).map(p => [String(p.participantId), p]));
+  const sheet = sh_('참여자');
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return;
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
+  let changed = false;
+
+  rows.forEach((row, i) => {
+    if (String(row[1]) !== String(b.recruitId)) return;
+    const u = updates.get(String(row[0]));
+    if (!u) return;
+    row[6] = Number(u.party) === 2 ? 2 : 1;
+    row[7] = Math.max(1, Number(u.order) || 1);
+    changed = true;
+  });
+
+  if (changed) sheet.getRange(2, 1, rows.length, 9).setValues(rows);
+}
+
+function readAll_() {
+  return {
+    recruits: rowsToObjects_('모집', ['id','ownerId','dungeon','date','time','memo','createdAt']),
+    participants: rowsToObjects_('참여자', ['id','recruitId','userId','characterId','characterName','className','party','order','createdAt']),
+    characters: rowsToObjects_('캐릭터', ['id','userId','name','className','representative','createdAt']),
+    activities: rowsToObjects_('활동', ['id','userId','text','createdAt'])
+  };
+}
+
+function rowsToObjects_(sheetName, keys) {
+  const sheet = sh_(sheetName);
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return [];
+
+  const values = sheet.getRange(2, 1, lastRow - 1, keys.length).getValues();
+  return values
+    .filter(row => row.some(value => value !== ''))
+    .map(row => {
+      const obj = {};
+      keys.forEach((key, i) => obj[key] = row[i]);
+      return obj;
+    });
+}
+
+function findRecruit_(id) {
+  const sheet = sh_('모집');
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return null;
+  const values = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+  return values.find(row => String(row[0]) === String(id)) || null;
+}
+
+function cleanupExpired_() {
+  const sheet = sh_('모집');
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return;
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+  const now = Date.now();
+  const expiredIds = [];
+
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const scheduled = scheduleMs_(rows[i][3], rows[i][4]);
+    if (scheduled && now - scheduled >= 7 * 24 * 60 * 60 * 1000) {
+      expiredIds.push(String(rows[i][0]));
+      sheet.deleteRow(i + 2);
+    }
+  }
+
+  if (expiredIds.length) {
+    deleteMatchingRows_('참여자', row => expiredIds.includes(String(row[1])));
+  }
+}
+
+function isCompleted_(recruitRow) {
+  const ms = scheduleMs_(recruitRow[3], recruitRow[4]);
+  return ms ? Date.now() >= ms : false;
+}
+
+function scheduleMs_(date, time) {
+  const d = String(date || '').trim();
+  const t = String(time || '').trim();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !/^\d{2}:\d{2}$/.test(t)) return 0;
+
+  return new Date(`${d}T${t}:00+09:00`).getTime();
+}
+
+function deleteMatchingRows_(sheetName, predicate) {
+  const sheet = sh_(sheetName);
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return;
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (predicate(rows[i])) sheet.deleteRow(i + 2);
+  }
+}
+
+function sh_(name) {
+  const id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  if (!id) throw new Error('먼저 초기설정 함수를 실행해주세요.');
+
+  const sheet = SpreadsheetApp.openById(id).getSheetByName(name);
+  if (!sheet) throw new Error(name + ' 시트를 찾을 수 없습니다.');
+  return sheet;
+}
+
+function clean_(value) {
+  const s = String(value == null ? '' : value).trim();
+  return /^[=+\-@]/.test(s) ? "'" + s : s;
+}
+
+function isoNow_() {
+  return Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd'T'HH:mm:ssXXX");
+}
+
+function json_(data) {
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}
