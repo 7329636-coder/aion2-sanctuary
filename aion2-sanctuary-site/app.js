@@ -10,6 +10,8 @@ const CLASSES = {
   '권성': 'assets/classes/striker.png',
 };
 
+const SERVERS = ['아리엘', '시엘'];
+
 const DUNGEON_IMAGE = {
   '침식': 'assets/dungeons/erosion.jpg',
   '무스펠 보통': 'assets/dungeons/muspel.jpg',
@@ -32,6 +34,7 @@ const supabaseDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHAB
 
 const state = {
   characters: [],
+  allCharacters: [],
   recruits: [],
   applications: {},
   activities: [],
@@ -62,6 +65,7 @@ function dbCharacterToUi(row) {
     userId: row.user_id,
     name: row.name,
     className: row.class_name,
+    server: row.server || '아리엘',
     representative: Boolean(row.is_representative),
     createdAt: row.created_at,
   };
@@ -144,7 +148,7 @@ async function loadSharedData({ silent = false } = {}) {
     const [recruitsResult, participantsResult, charactersResult] = await Promise.all([
       supabaseDb.from('recruits').select('*').order('created_at', { ascending: false }),
       supabaseDb.from('participants').select('*').order('created_at', { ascending: true }),
-      supabaseDb.from('characters').select('*').eq('user_id', CURRENT_OWNER_ID).order('created_at', { ascending: true }),
+      supabaseDb.from('characters').select('*').order('created_at', { ascending: true }),
     ]);
 
     if (recruitsResult.error) throw recruitsResult.error;
@@ -176,7 +180,8 @@ async function loadSharedData({ silent = false } = {}) {
     });
 
     state.recruits = recruits;
-    state.characters = (charactersResult.data || []).map(dbCharacterToUi);
+    state.allCharacters = (charactersResult.data || []).map(dbCharacterToUi);
+    state.characters = state.allCharacters.filter(c => c.userId === CURRENT_OWNER_ID);
     state.applications = applications;
     state.activities = buildRecentActivities(recruits, participants);
     render();
@@ -230,6 +235,49 @@ function formatDateKo(dateString) {
   if (Number.isNaN(d.getTime())) return dateString;
   const weekdays = ['일','월','화','수','목','금','토'];
   return `${d.getMonth() + 1}월 ${d.getDate()}일 (${weekdays[d.getDay()]})`;
+}
+
+function formatTime12Ko(timeString) {
+  const match = String(timeString || '').match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return '';
+  let hour = Number(match[1]);
+  const minute = match[2];
+  if (hour === 24) hour = 0;
+  const meridiem = hour < 12 ? '오전' : '오후';
+  const displayHour = hour % 12 || 12;
+  return `${meridiem} ${displayHour}:${minute}`;
+}
+
+function getCharacterById(characterId) {
+  return state.allCharacters.find(c => c.id === characterId) || state.characters.find(c => c.id === characterId) || null;
+}
+
+function getRepresentativeCharacter(userId) {
+  return state.allCharacters.find(c => c.userId === userId && c.representative) || null;
+}
+
+function getParticipantDisplayName(participant) {
+  const representative = getRepresentativeCharacter(participant.userId);
+  if (representative && representative.id !== participant.characterId) {
+    return `${participant.characterName} (${representative.name})`;
+  }
+  return participant.characterName;
+}
+
+function getParticipantMeta(participant) {
+  const character = getCharacterById(participant.characterId);
+  const server = character?.server;
+  return server ? `${server} · ${participant.className}` : participant.className;
+}
+
+function renderScheduleBadges(recruit) {
+  const date = recruit.date ? formatDateKo(recruit.date) : '';
+  const time24 = String(recruit.time || '');
+  const time12 = formatTime12Ko(time24);
+  return `<div class="recruit-schedule-row">
+    ${date ? `<span class="schedule-badge schedule-date">📅 ${escapeHtml(date)}</span>` : ''}
+    <span class="schedule-badge schedule-time">🕒 <strong>${escapeHtml(time24)}</strong>${time12 ? ` <small>(${escapeHtml(time12)})</small>` : ''}</span>
+  </div>`;
 }
 
 const COMPLETED_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -369,7 +417,7 @@ function renderRecruits() {
           <img class="thumb" src="${DUNGEON_IMAGE[r.dungeon]}" alt="${escapeHtml(r.dungeon)}" />
           <div>
             <div class="recruit-name">${escapeHtml(r.dungeon)}</div>
-            <div class="recruit-sub">${dateText}</div>
+            ${renderScheduleBadges(r)}
           </div>
         </div>
         <div class="recruit-meta compact-meta">
@@ -404,7 +452,7 @@ function renderCharacters() {
   }
   wrap.innerHTML = state.characters.map(c => `<div class="character-row ${c.representative ? 'representative' : ''}">
     <img class="class-icon" src="${CLASSES[c.className]}" alt="${escapeHtml(c.className)}" />
-    <div class="char-copy"><div class="char-name">${escapeHtml(c.name)}</div><div class="char-class">${escapeHtml(c.className)}</div></div>
+    <div class="char-copy"><div class="char-name">${escapeHtml(c.name)}</div><div class="char-class">${escapeHtml(c.server)} · ${escapeHtml(c.className)}</div></div>
     ${c.representative ? '<span class="rep-badge">★ 대표</span>' : ''}
   </div>`).join('');
 }
@@ -427,7 +475,7 @@ function renderCharactersPage() {
       <img class="class-icon large" src="${CLASSES[c.className]}" alt="${escapeHtml(c.className)}" />
       <div>
         <div class="character-card-name">${escapeHtml(c.name)}</div>
-        <div class="character-card-class">${escapeHtml(c.className)}</div>
+        <div class="character-card-class">${escapeHtml(c.server)} · ${escapeHtml(c.className)}</div>
       </div>
       ${c.representative ? '<span class="rep-badge">★ 대표 캐릭터</span>' : ''}
     </div>
@@ -473,7 +521,7 @@ function renderApplicationsPage() {
     </div>
     <div class="application-character">
       <span class="label">참여 캐릭터</span>
-      <strong>${escapeHtml(app.characterName)} · ${escapeHtml(app.className)}</strong>
+      <strong>${escapeHtml(app.characterName)} · ${escapeHtml(getCharacterById(app.characterId)?.server || '')} ${getCharacterById(app.characterId)?.server ? '· ' : ''}${escapeHtml(app.className)}</strong>
     </div>
     <button class="cancel-btn" data-cancel-app="${recruit.id}">참여 취소</button>
   </article>`).join('');
@@ -487,8 +535,8 @@ function renderPartyGroup(recruit, partyNo, canManage) {
       <div class="participant-order">${index + 1}</div>
       <img class="class-icon" src="${CLASSES[p.className]}" alt="${escapeHtml(p.className)}" />
       <div class="participant-copy party-participant-copy">
-        <strong>${escapeHtml(p.characterName)}</strong>
-        <span>${escapeHtml(p.className)}</span>
+        <strong>${escapeHtml(getParticipantDisplayName(p))}</strong>
+        <span>${escapeHtml(getParticipantMeta(p))}</span>
       </div>
       ${state.applications[recruit.id]?.characterId === p.characterId ? '<span class="participant-me">나</span>' : ''}
       ${canManage ? `<div class="party-manage-actions">
@@ -621,6 +669,7 @@ async function setRepresentative(characterId) {
   if (error) { console.error(error); showToast('대표 캐릭터를 변경하지 못했습니다.'); return; }
 
   state.characters.forEach(c => { c.representative = c.id === characterId; });
+  state.allCharacters.forEach(c => { if (c.userId === CURRENT_OWNER_ID) c.representative = c.id === characterId; });
   render();
   showToast('대표 캐릭터를 변경했습니다.');
 }
@@ -640,6 +689,7 @@ async function deleteCharacter(characterId) {
 
   const wasRepresentative = character.representative;
   state.characters = state.characters.filter(c => c.id !== characterId);
+  state.allCharacters = state.allCharacters.filter(c => c.id !== characterId);
   if (wasRepresentative && state.characters.length) {
     await setRepresentative(state.characters[0].id);
   } else {
@@ -737,7 +787,7 @@ function openJoin(recruitId) {
   const options = state.characters.map((c, i) => `<label class="join-option">
     <input type="radio" name="join-character" value="${c.id}" ${c.representative || i === 0 ? 'checked' : ''} />
     <img class="class-icon" src="${CLASSES[c.className]}" alt="${escapeHtml(c.className)}" />
-    <div class="char-copy"><div class="char-name">${escapeHtml(c.name)}</div><div class="char-class">${escapeHtml(c.className)}${c.representative ? ' · 대표 캐릭터' : ''}</div></div>
+    <div class="char-copy"><div class="char-name">${escapeHtml(c.name)}</div><div class="char-class">${escapeHtml(c.server)} · ${escapeHtml(c.className)}${c.representative ? ' · 대표 캐릭터' : ''}</div></div>
   </label>`).join('');
 
   openModal(`<span class="modal-eyebrow">${escapeHtml(recruit.dungeon)}</span><h2 id="modal-title">어떤 캐릭터로 참여하시겠어요?</h2><p class="modal-desc">${escapeHtml(recruit.time)} · 현재 ${recruit.current}/${recruit.max}명</p><div class="join-options">${options}</div><div class="modal-actions"><button class="ghost-btn" data-modal-cancel>취소</button><button class="primary-btn" id="confirm-join">참여하기</button></div>`);
@@ -806,8 +856,10 @@ async function cancelJoin(recruitId) {
 
 function openCharacterModal() {
   const options = Object.keys(CLASSES).map(name => `<option value="${name}">${name}</option>`).join('');
-  openModal(`<span class="modal-eyebrow">내 캐릭터</span><h2 id="modal-title">캐릭터 추가</h2><p class="modal-desc">캐릭터명과 직업을 등록하세요.</p><div class="form-grid">
+  const serverOptions = SERVERS.map(server => `<option value="${server}">${server}</option>`).join('');
+  openModal(`<span class="modal-eyebrow">내 캐릭터</span><h2 id="modal-title">캐릭터 추가</h2><p class="modal-desc">캐릭터명, 서버와 직업을 등록하세요.</p><div class="form-grid">
     <div class="field"><label for="character-name">캐릭터명</label><input id="character-name" maxlength="20" placeholder="캐릭터명을 입력하세요" /></div>
+    <div class="field"><label for="character-server">서버</label><select id="character-server">${serverOptions}</select></div>
     <div class="field"><label for="character-class">직업</label><select id="character-class">${options}</select></div>
     <label class="representative-check"><input type="checkbox" id="representative" /><span>이 캐릭터를 대표 캐릭터로 설정</span></label>
   </div><div class="modal-actions"><button class="ghost-btn" data-modal-cancel>취소</button><button class="primary-btn" id="save-character">추가하기</button></div>`);
@@ -815,6 +867,7 @@ function openCharacterModal() {
   modalContent.querySelector('[data-modal-cancel]').addEventListener('click', closeModal);
   modalContent.querySelector('#save-character').addEventListener('click', async () => {
     const name = modalContent.querySelector('#character-name').value.trim();
+    const server = modalContent.querySelector('#character-server').value;
     const className = modalContent.querySelector('#character-class').value;
     const representative = modalContent.querySelector('#representative').checked || state.characters.length === 0;
     if (!name) { showToast('캐릭터명을 입력해주세요.'); return; }
@@ -831,12 +884,15 @@ function openCharacterModal() {
     const { data, error } = await supabaseDb.from('characters').insert({
       user_id: CURRENT_OWNER_ID,
       name,
+      server,
       class_name: className,
       is_representative: representative,
     }).select().single();
     if (error) { console.error(error); showToast('캐릭터를 추가하지 못했습니다.'); return; }
 
-    state.characters.push(dbCharacterToUi(data));
+    const addedCharacter = dbCharacterToUi(data);
+    state.characters.push(addedCharacter);
+    state.allCharacters.push(addedCharacter);
     closeModal();
     render();
     showToast('캐릭터를 추가했습니다.');

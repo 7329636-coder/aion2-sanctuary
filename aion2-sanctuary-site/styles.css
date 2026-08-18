@@ -1491,3 +1491,165 @@ body::before { display: none; }
     padding-bottom: 2px;
   }
 }
+
+
+/* 2026-08 공용 UI 개선: 사용방법 / 서버 / 성역별 테두리 / 날짜·시간 강조 */
+.dashboard-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 22px !important;
+}
+.home-top-stack {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.25fr) minmax(340px, .75fr) !important;
+  gap: 22px !important;
+  align-items: stretch;
+}
+.home-character-panel,
+.usage-guide-panel {
+  min-width: 0;
+}
+.usage-guide-panel {
+  border: 1px solid #bcd5f2;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f5f9ff 0%, #edf5ff 100%);
+  padding: 20px 22px;
+  box-shadow: 0 8px 22px rgba(55, 105, 170, .07);
+}
+.usage-guide-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #d7e5f5;
+}
+.usage-guide-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: 0 0 30px;
+  background: #4f82c4;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+}
+.usage-guide-title div { display: grid; gap: 2px; }
+.usage-guide-title strong { color: #1f3550; font-size: 18px; }
+.usage-guide-title span { color: #71849a; font-size: 12px; }
+.usage-step {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 7px 0;
+}
+.usage-step > span {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #5b8bc8;
+  color: white;
+  font-size: 12px;
+  font-weight: 900;
+}
+.usage-step strong { display: block; color: #263b55; font-size: 14px; margin-bottom: 2px; }
+.usage-step p { margin: 0; color: #677b92; font-size: 12px; line-height: 1.5; }
+.usage-tip {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border-radius: 11px;
+  background: rgba(255,255,255,.72);
+  border: 1px solid #d8e6f6;
+}
+.usage-tip strong { color: #477cc0; font-size: 12px; }
+.usage-tip span { color: #536a84; font-size: 12px; line-height: 1.5; }
+
+.activity-wide-panel .activity-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.activity-wide-panel .activity-item { margin: 0; }
+
+/* 성역별 모집 카드 전체 테두리 */
+.theme-erosion {
+  --theme-border: #67c7b4;
+  --theme-soft: #f0faf7;
+  --theme-text: #2c8775;
+}
+.theme-muspel-normal {
+  --theme-border: #70b9e8;
+  --theme-soft: #f1f8fd;
+  --theme-text: #337da9;
+}
+.theme-muspel-hard {
+  --theme-border: #e69289;
+  --theme-soft: #fff5f4;
+  --theme-text: #b8544b;
+}
+.simple-recruit-item.white-recruit-item.theme-erosion,
+.simple-recruit-item.white-recruit-item.theme-muspel-normal,
+.simple-recruit-item.white-recruit-item.theme-muspel-hard,
+.completed-card.theme-erosion,
+.completed-card.theme-muspel-normal,
+.completed-card.theme-muspel-hard {
+  border: 2px solid var(--theme-border) !important;
+  border-left-width: 2px !important;
+}
+
+/* 날짜/시간은 한 줄 배지 */
+.simple-recruit-item.white-recruit-item {
+  grid-template-columns: minmax(440px, 1.55fr) .52fr minmax(210px, .75fr) auto !important;
+}
+.recruit-schedule-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.schedule-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 9px;
+  border: 1px solid var(--theme-border, #cbd8e5);
+  background: var(--theme-soft, #f7f9fb);
+  color: var(--theme-text, #53677d);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+.schedule-time strong { font-size: 14px; font-weight: 900; }
+.schedule-time small { font-size: 11px; font-weight: 700; opacity: .82; }
+
+/* 캐릭터 서버 표기 */
+.char-class,
+.character-card-class { line-height: 1.45; }
+
+@media (max-width: 1100px) {
+  .home-top-stack { grid-template-columns: 1fr !important; }
+  .activity-wide-panel .activity-list { grid-template-columns: 1fr 1fr; }
+  .simple-recruit-item.white-recruit-item { grid-template-columns: 1fr !important; }
+  .recruit-schedule-row {
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .recruit-schedule-row::-webkit-scrollbar { display: none; }
+}
+@media (max-width: 700px) {
+  .activity-wide-panel .activity-list { grid-template-columns: 1fr; }
+  .usage-guide-panel { padding: 17px 16px; }
+}
