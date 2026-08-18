@@ -1653,3 +1653,73 @@ body::before { display: none; }
   .activity-wide-panel .activity-list { grid-template-columns: 1fr; }
   .usage-guide-panel { padding: 17px 16px; }
 }
+
+
+/* 2026-08 사용 방법을 상단 메뉴 팝업으로 이동 */
+.home-top-stack {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.usage-help-tab {
+  color: #356fa9 !important;
+  font-weight: 800;
+}
+.usage-help-tab:hover {
+  color: #245f98 !important;
+  background: #f1f6fb !important;
+}
+
+.usage-guide-modal {
+  width: min(590px, calc(100vw - 32px)) !important;
+  background: #ffffff !important;
+  color: #1f2937 !important;
+  border: 1px solid #dfe6ee !important;
+  box-shadow: 0 28px 72px rgba(15, 23, 42, .18) !important;
+}
+.usage-guide-modal h2 {
+  margin-bottom: 6px !important;
+}
+.usage-guide-modal .modal-desc {
+  margin-bottom: 18px !important;
+}
+.usage-modal-steps {
+  display: grid;
+  gap: 4px;
+  padding: 4px 0 2px;
+}
+.usage-guide-modal .usage-step {
+  padding: 10px 0;
+}
+.usage-guide-modal .usage-step > span {
+  background: #5b8bc8;
+}
+.usage-guide-modal .usage-step strong {
+  color: #263b55;
+  font-size: 15px;
+}
+.usage-guide-modal .usage-step p {
+  color: #677b92;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.usage-guide-modal .usage-tip {
+  margin-top: 14px;
+  background: #f5f9ff;
+  border-color: #d8e6f6;
+}
+.usage-guide-actions {
+  margin-top: 18px !important;
+}
+.usage-guide-actions .primary-btn {
+  min-width: 88px;
+}
+
+@media (max-width: 760px) {
+  .usage-help-tab {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+  .usage-guide-modal {
+    padding: 22px 18px !important;
+  }
+}

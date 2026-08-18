@@ -724,9 +724,63 @@ function switchView(view) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-document.querySelectorAll('.nav-tab').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
+document.querySelectorAll('.nav-tab[data-view]').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
 document.querySelectorAll('[data-go-view]').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.goView)));
 document.querySelector('#go-recruit-view')?.addEventListener('click', () => switchView('recruit'));
+
+
+function openUsageGuideModal() {
+  openModal(`
+    <span class="modal-eyebrow">성역 모집 안내</span>
+    <h2 id="modal-title">사용 방법</h2>
+    <p class="modal-desc">처음 이용하신다면 아래 순서대로 사용해주세요.</p>
+
+    <div class="usage-modal-steps">
+      <div class="usage-step">
+        <span>1</span>
+        <div>
+          <strong>캐릭터 등록</strong>
+          <p>먼저 + 캐릭터 추가에서 서버, 캐릭터명, 직업을 등록해주세요.</p>
+        </div>
+      </div>
+      <div class="usage-step">
+        <span>2</span>
+        <div>
+          <strong>모집 참여</strong>
+          <p>원하는 성역 모집에서 참여할 캐릭터를 선택해주세요.</p>
+        </div>
+      </div>
+      <div class="usage-step">
+        <span>3</span>
+        <div>
+          <strong>모집 만들기</strong>
+          <p>날짜와 시간을 선택해 직접 성역 모집을 만들 수 있습니다.</p>
+        </div>
+      </div>
+      <div class="usage-step">
+        <span>4</span>
+        <div>
+          <strong>참여 목록 확인</strong>
+          <p>참여 인원과 1파티 / 2파티 구성을 확인할 수 있습니다.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="usage-tip">
+      <strong>TIP</strong>
+      <span>부캐릭터로 참여하면 대표 캐릭터명이 함께 표시됩니다. 예: 뚀봉 (쇼봉)</span>
+    </div>
+
+    <div class="modal-actions usage-guide-actions">
+      <button class="primary-btn" data-modal-cancel>확인</button>
+    </div>
+  `);
+
+  modal.classList.add('light-action-modal', 'usage-guide-modal');
+  modalContent.querySelector('[data-modal-cancel]')?.addEventListener('click', closeModal);
+}
+
+document.querySelector('#usage-help-btn')?.addEventListener('click', openUsageGuideModal);
 
 const profileBtn = document.querySelector('#profile-btn');
 const profileMenu = document.querySelector('#profile-menu');
@@ -754,13 +808,13 @@ const modalContent = document.querySelector('#modal-content');
 let backdropPointerStarted = false;
 
 function openModal(html) {
-  modal.classList.remove('recruit-modal-clean', 'light-action-modal', 'participant-modal', 'character-modal-clean');
+  modal.classList.remove('recruit-modal-clean', 'light-action-modal', 'participant-modal', 'character-modal-clean', 'usage-guide-modal');
   modalContent.innerHTML = html;
   backdrop.classList.remove('hidden');
   backdrop.setAttribute('aria-hidden', 'false');
 }
 function closeModal() {
-  modal.classList.remove('recruit-modal-clean', 'light-action-modal', 'participant-modal', 'character-modal-clean');
+  modal.classList.remove('recruit-modal-clean', 'light-action-modal', 'participant-modal', 'character-modal-clean', 'usage-guide-modal');
   backdrop.classList.add('hidden');
   backdrop.setAttribute('aria-hidden', 'true');
   modalContent.innerHTML = '';
