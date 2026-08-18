@@ -1,0 +1,13 @@
+v16 Supabase 공용 버전
+
+- Google Sheets / Apps Script 연결을 완전히 제거했습니다.
+- Supabase 익명 로그인으로 사용자별 캐릭터/신청을 구분합니다.
+- 모집/참여자/캐릭터는 Supabase에 공용 저장됩니다.
+- Realtime으로 다른 사람의 변경사항을 자동 반영합니다.
+- 기존 Vercel 주소는 그대로 사용합니다.
+
+적용:
+1) Supabase SQL Editor에서 Supabase_마무리_SQL.txt 내용을 1회 실행
+2) GitHub aion2-sanctuary-site 폴더에 이 폴더의 내용물을 전부 덮어쓰기
+3) Commit changes
+4) Vercel 자동 배포 후 Ctrl+F5
