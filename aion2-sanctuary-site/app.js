@@ -171,7 +171,7 @@ function renderRecruits() {
   const title = document.querySelector('#recruit-panel-title');
   const desc = document.querySelector('#recruit-panel-desc');
   if (title) title.textContent = state.recruitStatus === 'completed' ? '완료' : '현재 모집 중';
-  if (desc) desc.textContent = state.recruitStatus === 'completed' ? '시간이 지난 모집은 7일 동안 보관됩니다.' : '참여할 파티를 선택하세요.';
+  if (desc) desc.textContent = state.recruitStatus === 'completed' ? '완료된 모집은 7일 동안 보관되며, 파티 구성은 버튼을 눌러 확인할 수 있습니다.' : '참여할 파티를 선택하세요.';
   document.querySelectorAll('[data-recruit-status]').forEach(btn => btn.classList.toggle('active', btn.dataset.recruitStatus === state.recruitStatus));
 
   if (!rows.length) {
@@ -195,40 +195,63 @@ function renderRecruits() {
     return;
   }
 
-  list.innerHTML = rows.map(r => {
-    const completed = isRecruitCompleted(r, now);
-    const app = state.applications[r.id];
-    const participantCount = Array.isArray(r.participants) ? r.participants.length : (r.current || 0);
-    const dateText = r.date ? `${escapeHtml(formatDateKo(r.date))} · ${escapeHtml(r.time)}` : escapeHtml(r.time);
-    const memoText = r.memo ? escapeHtml(r.memo).split('\n').join('<br>') : '메모가 없습니다.';
-    return `<article class="recruit-item simple-recruit-item white-recruit-item ${getRecruitThemeClass(r.dungeon)} ${completed ? 'completed-recruit-item' : ''}">
-      <div class="recruit-title">
-        <img class="thumb" src="${DUNGEON_IMAGE[r.dungeon]}" alt="${escapeHtml(r.dungeon)}" />
-        <div>
-          <div class="recruit-name-row">
-            <div class="recruit-name">${escapeHtml(r.dungeon)}</div>
-            ${completed ? '<span class="completed-badge">완료</span>' : ''}
-          </div>
-          <div class="recruit-sub">${dateText}</div>
-          ${completed ? `<div class="auto-delete-note">${getCompletedRetentionText(r, now)}</div>` : ''}
+  if (state.recruitStatus === 'completed') {
+    list.innerHTML = rows.map(r => {
+      const participantCount = Array.isArray(r.participants) ? r.participants.length : (r.current || 0);
+      const dateText = r.date ? `${escapeHtml(formatDateKo(r.date))} · ${escapeHtml(r.time)}` : escapeHtml(r.time);
+      return `<article class="completed-card ${getRecruitThemeClass(r.dungeon)}">
+        <div class="completed-cover-wrap">
+          <img class="completed-cover" src="${DUNGEON_IMAGE[r.dungeon]}" alt="${escapeHtml(r.dungeon)}" />
+          <span class="completed-cover-badge">완료</span>
         </div>
-      </div>
-      <div class="recruit-meta compact-meta">
-        <span class="label">${completed ? '참여 인원' : '현재 인원'}</span>
-        <strong>${participantCount}/${r.max}명</strong>
-        <button class="participant-preview-btn" data-participants="${r.id}">참여 목록 ${participantCount}명</button>
-      </div>
-      <div class="recruit-note-block">
-        <span class="label">메모</span>
-        <div class="recruit-note-text">${memoText}</div>
-      </div>
-      <div class="recruit-action-stack">
-        ${completed
-          ? `<div class="completed-action-label">진행 완료</div><button class="delete-recruit-btn" data-delete-recruit="${r.id}">삭제</button>`
-          : `${app ? `<button class="cancel-btn clean-action-btn" data-cancel="${r.id}">참여 취소</button>` : `<button class="join-btn clean-action-btn" data-join="${r.id}">참여하기</button>`}<button class="delete-recruit-btn" data-delete-recruit="${r.id}">삭제</button>`}
-      </div>
-    </article>`;
-  }).join('') + (state.recruitStatus === 'active' ? `<div class="recruit-bottom-action"><button class="primary-btn add-recruit-inline">＋ 모집하기</button></div>` : '');
+        <div class="completed-main">
+          <div class="completed-title-row">
+            <div>
+              <div class="completed-name">${escapeHtml(r.dungeon)}</div>
+              <div class="completed-date">${dateText}</div>
+            </div>
+            <div class="completed-count">${participantCount}/${r.max}명</div>
+          </div>
+          <div class="completed-bottom-row">
+            <span class="auto-delete-note">${getCompletedRetentionText(r, now)}</span>
+            <div class="completed-buttons">
+              <button class="completed-party-btn" data-participants="${r.id}">파티 보기</button>
+              <button class="delete-recruit-btn compact-delete-btn" data-delete-recruit="${r.id}">삭제</button>
+            </div>
+          </div>
+        </div>
+      </article>`;
+    }).join('');
+  } else {
+    list.innerHTML = rows.map(r => {
+      const app = state.applications[r.id];
+      const participantCount = Array.isArray(r.participants) ? r.participants.length : (r.current || 0);
+      const dateText = r.date ? `${escapeHtml(formatDateKo(r.date))} · ${escapeHtml(r.time)}` : escapeHtml(r.time);
+      const memoText = r.memo ? escapeHtml(r.memo).split('\n').join('<br>') : '메모가 없습니다.';
+      return `<article class="recruit-item simple-recruit-item white-recruit-item ${getRecruitThemeClass(r.dungeon)}">
+        <div class="recruit-title">
+          <img class="thumb" src="${DUNGEON_IMAGE[r.dungeon]}" alt="${escapeHtml(r.dungeon)}" />
+          <div>
+            <div class="recruit-name">${escapeHtml(r.dungeon)}</div>
+            <div class="recruit-sub">${dateText}</div>
+          </div>
+        </div>
+        <div class="recruit-meta compact-meta">
+          <span class="label">현재 인원</span>
+          <strong>${participantCount}/${r.max}명</strong>
+          <button class="participant-preview-btn" data-participants="${r.id}">참여 목록 ${participantCount}명</button>
+        </div>
+        <div class="recruit-note-block">
+          <span class="label">메모</span>
+          <div class="recruit-note-text">${memoText}</div>
+        </div>
+        <div class="recruit-action-stack">
+          ${app ? `<button class="cancel-btn clean-action-btn" data-cancel="${r.id}">참여 취소</button>` : `<button class="join-btn clean-action-btn" data-join="${r.id}">참여하기</button>`}
+          <button class="delete-recruit-btn" data-delete-recruit="${r.id}">삭제</button>
+        </div>
+      </article>`;
+    }).join('') + `<div class="recruit-bottom-action"><button class="primary-btn add-recruit-inline">＋ 모집하기</button></div>`;
+  }
 
   list.querySelectorAll('[data-join]').forEach(btn => btn.addEventListener('click', () => openJoin(btn.dataset.join)));
   list.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', () => cancelJoin(btn.dataset.cancel)));
@@ -327,7 +350,7 @@ function renderPartyGroup(recruit, partyNo, canManage) {
   const rows = partyMembers.length ? partyMembers.map((p, index) => `<div class="participant-row party-participant-row">
       <div class="participant-order">${index + 1}</div>
       <img class="class-icon" src="${CLASSES[p.className]}" alt="${escapeHtml(p.className)}" />
-      <div class="participant-copy">
+      <div class="participant-copy party-participant-copy">
         <strong>${escapeHtml(p.characterName)}</strong>
         <span>${escapeHtml(p.className)}</span>
       </div>
@@ -335,10 +358,10 @@ function renderPartyGroup(recruit, partyNo, canManage) {
       ${canManage ? `<div class="party-manage-actions">
         <button data-move-participant="${p.characterId}" data-direction="up" title="위로">↑</button>
         <button data-move-participant="${p.characterId}" data-direction="down" title="아래로">↓</button>
-        <button class="party-switch-btn" data-switch-party="${p.characterId}" data-target-party="${partyNo === 1 ? 2 : 1}">${partyNo === 1 ? '2파티로' : '1파티로'}</button>
+        <button class="party-switch-btn" data-switch-party="${p.characterId}" data-target-party="${partyNo === 1 ? 2 : 1}">${partyNo === 1 ? '2파티' : '1파티'}</button>
       </div>` : ''}
     </div>`).join('') : `<div class="party-empty">아직 참여자가 없습니다.</div>`;
-  return `<section class="party-section">
+  return `<section class="party-section party-${partyNo}">
     <div class="party-section-head"><strong>${partyNo}파티</strong><span>${partyMembers.length}/5명</span></div>
     <div class="party-member-list">${rows}</div>
   </section>`;
@@ -350,7 +373,7 @@ function openParticipantList(recruitId) {
   if (!Array.isArray(recruit.participants)) recruit.participants = [];
   const canManage = recruit.ownerId === CURRENT_OWNER_ID;
   openModal(`<span class="modal-eyebrow">${escapeHtml(recruit.dungeon)}</span>
-    <h2 id="modal-title">참여 목록</h2>
+    <h2 id="modal-title">파티 참여 목록</h2>
     <p class="modal-desc">현재 ${recruit.participants.length}/${recruit.max}명이 참여 중입니다.${canManage ? ' 모집자는 순서와 파티를 변경할 수 있습니다.' : ''}</p>
     <div class="party-grid">
       ${renderPartyGroup(recruit, 1, canManage)}
