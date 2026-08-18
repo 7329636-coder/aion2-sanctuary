@@ -1891,3 +1891,122 @@ body::before { display: none; }
     grid-column: 2 / 3 !important;
   }
 }
+
+/* 2026-08 홈 비율 재조정: 모집 75 / 내 캐릭터 25 */
+.home-main-grid {
+  grid-template-columns: minmax(0, 3fr) minmax(300px, 1fr) !important;
+  gap: 18px !important;
+}
+
+/* 모집 카드 내부는 글자 잘림 방지를 위해 2행 구조로 정리 */
+.home-main-grid .simple-recruit-item.white-recruit-item {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-areas:
+    "title actions"
+    "meta  actions"
+    "note  actions" !important;
+  gap: 10px 14px !important;
+  align-items: center !important;
+  padding: 16px 18px !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-title {
+  grid-area: title !important;
+  min-width: 0 !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-meta {
+  grid-area: meta !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+  white-space: normal !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-note-block {
+  grid-area: note !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-action-stack {
+  grid-area: actions !important;
+  min-width: 104px !important;
+  align-self: stretch !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+.home-main-grid .recruit-schedule-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+.home-main-grid .schedule-badge {
+  white-space: nowrap !important;
+  flex: 0 0 auto !important;
+}
+
+.home-main-grid .participant-preview-btn {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  width: auto !important;
+  max-width: none !important;
+  flex: 0 0 auto !important;
+}
+
+.home-main-grid .recruit-meta .label,
+.home-main-grid .recruit-meta strong,
+.home-main-grid .recruit-meta span {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+.home-main-grid .clean-action-btn,
+.home-main-grid .delete-recruit-btn {
+  width: 104px !important;
+  min-width: 104px !important;
+  white-space: nowrap !important;
+}
+
+/* 내 캐릭터 영역 글자 보호 */
+.home-character-column {
+  min-width: 300px !important;
+}
+
+.home-character-column .character-card,
+.home-character-column .character-item {
+  min-width: 0 !important;
+}
+
+.home-character-column .character-name,
+.home-character-column .character-meta {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* 화면이 더 좁으면 비율을 억지로 유지하지 않고 세로 배치 */
+@media (max-width: 1120px) {
+  .home-main-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .home-main-grid > .recruit-panel,
+  .home-character-column,
+  .home-main-grid > .activity-wide-panel {
+    grid-column: 1 !important;
+  }
+
+  .home-main-grid > .recruit-panel { grid-row: 1 !important; }
+  .home-character-column {
+    grid-row: 2 !important;
+    min-width: 0 !important;
+  }
+  .home-main-grid > .activity-wide-panel { grid-row: 3 !important; }
+}
