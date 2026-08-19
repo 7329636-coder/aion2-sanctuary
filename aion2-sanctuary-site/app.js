@@ -996,7 +996,12 @@ function openRecruitModal() {
           <span class="time-colon">:</span>
           <select id="new-minute" aria-label="분">
             <option value="00">00</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
             <option value="30">30</option>
+            <option value="40">40</option>
+            <option value="50">50</option>
+            <option value="60">60</option>
           </select>
         </div>
         <input id="new-time" type="hidden" />
@@ -1080,11 +1085,25 @@ function openRecruitModal() {
 
     let dbDate = date;
     let dbTime = time;
-    if (time === '24:00') {
+
+    // 60분 선택 시 자동으로 다음 시각의 00분으로 변환
+    // 예: 21:60 → 22:00 / 23:60 → 다음 날 00:00
+    const [selectedHourText, selectedMinuteText = '00'] = String(time).split(':');
+    let selectedHour = Number(selectedHourText);
+    let selectedMinute = Number(selectedMinuteText);
+
+    if (selectedMinute === 60) {
+      selectedHour += 1;
+      selectedMinute = 0;
+    }
+
+    if (selectedHour >= 24) {
       const next = new Date(`${date}T00:00:00`);
       next.setDate(next.getDate() + 1);
       dbDate = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
-      dbTime = '00:00';
+      dbTime = `${String(selectedHour - 24).padStart(2, '0')}:${String(selectedMinute).padStart(2, '0')}`;
+    } else {
+      dbTime = `${String(selectedHour).padStart(2, '0')}:${String(selectedMinute).padStart(2, '0')}`;
     }
 
     const { data, error } = await supabaseDb.from('recruits').insert({
