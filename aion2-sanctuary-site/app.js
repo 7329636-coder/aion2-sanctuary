@@ -257,17 +257,24 @@ function getRepresentativeCharacter(userId) {
 }
 
 function getParticipantDisplayName(participant) {
+  const character = getCharacterById(participant.characterId);
+  const currentName = character?.name || participant.characterName;
   const representative = getRepresentativeCharacter(participant.userId);
   if (representative && representative.id !== participant.characterId) {
-    return `${participant.characterName} (${representative.name})`;
+    return `${currentName} (${representative.name})`;
   }
-  return participant.characterName;
+  return currentName;
+}
+
+function getParticipantClassName(participant) {
+  return getCharacterById(participant.characterId)?.className || participant.className;
 }
 
 function getParticipantMeta(participant) {
   const character = getCharacterById(participant.characterId);
   const server = character?.server;
-  return server ? `${server} · ${participant.className}` : participant.className;
+  const className = character?.className || participant.className;
+  return server ? `${server} · ${className}` : className;
 }
 
 function renderScheduleBadges(recruit) {
@@ -431,7 +438,7 @@ function renderRecruits() {
         </div>
         <div class="recruit-action-stack">
           ${app ? `<button class="cancel-btn clean-action-btn" data-cancel="${r.id}">참여 취소</button>` : `<button class="join-btn clean-action-btn" data-join="${r.id}">참여하기</button>`}
-          ${r.ownerId === CURRENT_OWNER_ID ? `<button class="delete-recruit-btn" data-delete-recruit="${r.id}">삭제</button>` : ''}
+          ${r.ownerId === CURRENT_OWNER_ID ? `<button class="memo-edit-btn" data-edit-memo="${r.id}">메모 수정</button><button class="delete-recruit-btn" data-delete-recruit="${r.id}">삭제</button>` : ''}
         </div>
       </article>`;
     }).join('') + `<div class="recruit-bottom-action"><button class="primary-btn add-recruit-inline">＋ 모집하기</button></div>`;
@@ -440,6 +447,7 @@ function renderRecruits() {
   list.querySelectorAll('[data-join]').forEach(btn => btn.addEventListener('click', () => openJoin(btn.dataset.join)));
   list.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', () => cancelJoin(btn.dataset.cancel)));
   list.querySelectorAll('[data-delete-recruit]').forEach(btn => btn.addEventListener('click', () => deleteRecruit(btn.dataset.deleteRecruit)));
+  list.querySelectorAll('[data-edit-memo]').forEach(btn => btn.addEventListener('click', () => openMemoEditModal(btn.dataset.editMemo)));
   list.querySelectorAll('[data-participants]').forEach(btn => btn.addEventListener('click', () => openParticipantList(btn.dataset.participants)));
   list.querySelector('.add-recruit-inline')?.addEventListener('click', openRecruitModal);
 }
@@ -480,11 +488,13 @@ function renderCharactersPage() {
       ${c.representative ? '<span class="rep-badge">★ 대표 캐릭터</span>' : ''}
     </div>
     <div class="character-card-actions">
+      <button class="outline-btn small-btn character-edit-btn" data-edit-char="${c.id}">수정</button>
       ${c.representative ? '' : `<button class="outline-btn small-btn" data-set-rep="${c.id}">대표로 설정</button>`}
       <button class="danger-text-btn" data-delete-char="${c.id}">삭제</button>
     </div>
   </article>`).join('');
 
+  wrap.querySelectorAll('[data-edit-char]').forEach(btn => btn.addEventListener('click', () => openCharacterEditModal(btn.dataset.editChar)));
   wrap.querySelectorAll('[data-set-rep]').forEach(btn => btn.addEventListener('click', () => setRepresentative(btn.dataset.setRep)));
   wrap.querySelectorAll('[data-delete-char]').forEach(btn => btn.addEventListener('click', () => deleteCharacter(btn.dataset.deleteChar)));
 }
@@ -521,7 +531,7 @@ function renderApplicationsPage() {
     </div>
     <div class="application-character">
       <span class="label">참여 캐릭터</span>
-      <strong>${escapeHtml(app.characterName)} · ${escapeHtml(getCharacterById(app.characterId)?.server || '')} ${getCharacterById(app.characterId)?.server ? '· ' : ''}${escapeHtml(app.className)}</strong>
+      <strong>${escapeHtml(getCharacterById(app.characterId)?.name || app.characterName)} · ${escapeHtml(getCharacterById(app.characterId)?.server || '')} ${getCharacterById(app.characterId)?.server ? '· ' : ''}${escapeHtml(getCharacterById(app.characterId)?.className || app.className)}</strong>
     </div>
     <button class="cancel-btn" data-cancel-app="${recruit.id}">참여 취소</button>
   </article>`).join('');
@@ -533,7 +543,7 @@ function renderPartyGroup(recruit, partyNo, canManage) {
   const partyMembers = recruit.participants.filter(p => (p.party || 1) === partyNo);
   const rows = partyMembers.length ? partyMembers.map((p, index) => `<div class="participant-row party-participant-row">
       <div class="participant-order">${index + 1}</div>
-      <img class="class-icon" src="${CLASSES[p.className]}" alt="${escapeHtml(p.className)}" />
+      <img class="class-icon" src="${CLASSES[getParticipantClassName(p)]}" alt="${escapeHtml(getParticipantClassName(p))}" />
       <div class="participant-copy party-participant-copy">
         <strong>${escapeHtml(getParticipantDisplayName(p))}</strong>
         <span>${escapeHtml(getParticipantMeta(p))}</span>
@@ -808,13 +818,13 @@ const modalContent = document.querySelector('#modal-content');
 let backdropPointerStarted = false;
 
 function openModal(html) {
-  modal.classList.remove('recruit-modal-clean', 'light-action-modal', 'participant-modal', 'character-modal-clean', 'usage-guide-modal');
+  modal.classList.remove('recruit-modal-clean', 'light-action-modal', 'participant-modal', 'character-modal-clean', 'usage-guide-modal', 'memo-edit-modal', 'character-edit-modal');
   modalContent.innerHTML = html;
   backdrop.classList.remove('hidden');
   backdrop.setAttribute('aria-hidden', 'false');
 }
 function closeModal() {
-  modal.classList.remove('recruit-modal-clean', 'light-action-modal', 'participant-modal', 'character-modal-clean', 'usage-guide-modal');
+  modal.classList.remove('recruit-modal-clean', 'light-action-modal', 'participant-modal', 'character-modal-clean', 'usage-guide-modal', 'memo-edit-modal', 'character-edit-modal');
   backdrop.classList.add('hidden');
   backdrop.setAttribute('aria-hidden', 'true');
   modalContent.innerHTML = '';
@@ -908,6 +918,99 @@ async function cancelJoin(recruitId) {
   showToast('참여를 취소했습니다.');
 }
 
+
+function openCharacterEditModal(characterId) {
+  const character = state.characters.find(c => c.id === characterId);
+  if (!character) return;
+
+  const classOptions = Object.keys(CLASSES)
+    .map(name => `<option value="${name}" ${name === character.className ? 'selected' : ''}>${name}</option>`)
+    .join('');
+
+  const serverOptions = SERVERS
+    .map(server => `<option value="${server}" ${server === character.server ? 'selected' : ''}>${server}</option>`)
+    .join('');
+
+  openModal(`
+    <span class="modal-eyebrow">내 캐릭터</span>
+    <h2 id="modal-title">캐릭터 수정</h2>
+    <p class="modal-desc">캐릭터명, 서버와 직업을 수정할 수 있습니다.</p>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="edit-character-name">캐릭터명</label>
+        <input id="edit-character-name" maxlength="20" value="${escapeHtml(character.name)}" />
+      </div>
+      <div class="field">
+        <label for="edit-character-server">서버</label>
+        <select id="edit-character-server">${serverOptions}</select>
+      </div>
+      <div class="field">
+        <label for="edit-character-class">직업</label>
+        <select id="edit-character-class">${classOptions}</select>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="ghost-btn" data-modal-cancel>취소</button>
+      <button class="primary-btn" id="save-character-edit">저장하기</button>
+    </div>
+  `);
+
+  modal.classList.add('recruit-modal-clean', 'character-modal-clean', 'character-edit-modal');
+
+  modalContent.querySelector('[data-modal-cancel]').addEventListener('click', closeModal);
+
+  modalContent.querySelector('#save-character-edit').addEventListener('click', async () => {
+    const name = modalContent.querySelector('#edit-character-name').value.trim();
+    const server = modalContent.querySelector('#edit-character-server').value;
+    const className = modalContent.querySelector('#edit-character-class').value;
+
+    if (!name) {
+      showToast('캐릭터명을 입력해주세요.');
+      modalContent.querySelector('#edit-character-name').focus();
+      return;
+    }
+
+    const { error } = await supabaseDb
+      .from('characters')
+      .update({
+        name,
+        server,
+        class_name: className,
+      })
+      .eq('id', character.id)
+      .eq('user_id', CURRENT_OWNER_ID);
+
+    if (error) {
+      console.error(error);
+      showToast('캐릭터를 수정하지 못했습니다.');
+      return;
+    }
+
+    character.name = name;
+    character.server = server;
+    character.className = className;
+
+    const allCharacter = state.allCharacters.find(c => c.id === character.id);
+    if (allCharacter) {
+      allCharacter.name = name;
+      allCharacter.server = server;
+      allCharacter.className = className;
+    }
+
+    closeModal();
+    render();
+    showToast('캐릭터 정보를 수정했습니다.');
+  });
+
+  setTimeout(() => {
+    const input = modalContent.querySelector('#edit-character-name');
+    input?.focus();
+    input?.select();
+  }, 0);
+}
+
 function openCharacterModal() {
   const options = Object.keys(CLASSES).map(name => `<option value="${name}">${name}</option>`).join('');
   const serverOptions = SERVERS.map(server => `<option value="${server}">${server}</option>`).join('');
@@ -968,6 +1071,67 @@ function saveRecruitDraft() {
 }
 function clearRecruitDraft() {
   localStorage.removeItem(STORAGE.recruitDraft);
+}
+
+
+function openMemoEditModal(recruitId) {
+  const recruit = state.recruits.find(r => r.id === recruitId);
+  if (!recruit || recruit.ownerId !== CURRENT_OWNER_ID) return;
+
+  const currentMemo = recruit.memo || '';
+
+  openModal(`
+    <span class="modal-eyebrow">${escapeHtml(recruit.dungeon)}</span>
+    <h2 id="modal-title">메모 수정</h2>
+    <p class="modal-desc">모집글에 표시될 메모를 수정할 수 있습니다.</p>
+
+    <div class="compact-recruit-form">
+      <div class="field memo-field">
+        <label for="edit-memo">메모</label>
+        <textarea id="edit-memo" rows="5" maxlength="200" placeholder="예: 초보 환영 / 22시 출발 / 편하게 오세요">${escapeHtml(currentMemo)}</textarea>
+        <div class="memo-count"><span id="edit-memo-count">${currentMemo.length}</span>/200</div>
+      </div>
+    </div>
+
+    <div class="modal-actions compact-modal-actions">
+      <button class="ghost-btn" data-modal-cancel>취소</button>
+      <button class="primary-btn" id="save-memo-edit">저장하기</button>
+    </div>
+  `);
+
+  modal.classList.add('recruit-modal-clean', 'memo-edit-modal');
+
+  const memoInput = modalContent.querySelector('#edit-memo');
+  const memoCount = modalContent.querySelector('#edit-memo-count');
+
+  memoInput.addEventListener('input', () => {
+    memoCount.textContent = String(memoInput.value.length);
+  });
+
+  modalContent.querySelector('[data-modal-cancel]').addEventListener('click', closeModal);
+
+  modalContent.querySelector('#save-memo-edit').addEventListener('click', async () => {
+    const memo = memoInput.value.trim();
+
+    const { error } = await supabaseDb
+      .from('recruits')
+      .update({ memo })
+      .eq('id', recruit.id)
+      .eq('owner_id', CURRENT_OWNER_ID);
+
+    if (error) {
+      console.error(error);
+      showToast('메모를 수정하지 못했습니다.');
+      return;
+    }
+
+    recruit.memo = memo;
+    closeModal();
+    render();
+    showToast('메모를 수정했습니다.');
+  });
+
+  setTimeout(() => memoInput.focus(), 0);
 }
 
 function openRecruitModal() {

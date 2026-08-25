@@ -2125,3 +2125,72 @@ body::before { display: none; }
     min-height: 180px !important;
   }
 }
+
+
+/* 메모 수정 */
+.memo-edit-btn {
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid #d8e3ee;
+  background: #ffffff;
+  color: #537394;
+  cursor: pointer;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.memo-edit-btn:hover {
+  background: #f5f9fd;
+  border-color: #c8d8e8;
+}
+.memo-edit-modal {
+  background: #ffffff !important;
+  color: #1f2937 !important;
+  border: 1px solid #dfe6ee !important;
+  box-shadow: 0 26px 68px rgba(15,23,42,.18) !important;
+}
+.memo-edit-modal .modal-desc {
+  color: #6f7d8b !important;
+}
+.memo-edit-modal .field label {
+  color: #394554 !important;
+}
+.memo-edit-modal textarea {
+  width: 100% !important;
+  min-height: 130px !important;
+  background: #ffffff !important;
+  color: #17202a !important;
+  border: 1px solid #cfd6de !important;
+  border-radius: 10px !important;
+  padding: 12px 13px !important;
+  font: inherit !important;
+  line-height: 1.55 !important;
+  resize: vertical !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+.memo-edit-modal textarea:focus {
+  border-color: #4c82b8 !important;
+  box-shadow: 0 0 0 3px rgba(76,130,184,.12) !important;
+}
+.memo-edit-modal .memo-count {
+  color: #97a2ae !important;
+}
+
+
+/* 캐릭터 수정 */
+.character-edit-btn {
+  color: #4f7398 !important;
+  border-color: #d3e0ec !important;
+  background: #ffffff !important;
+}
+.character-edit-btn:hover {
+  background: #f5f9fd !important;
+  border-color: #c4d6e7 !important;
+}
+
+.character-edit-modal {
+  background: #ffffff !important;
+  color: #1f2937 !important;
+  border: 1px solid #dfe6ee !important;
+  box-shadow: 0 26px 68px rgba(15,23,42,.18) !important;
+}
