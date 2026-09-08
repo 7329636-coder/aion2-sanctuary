@@ -80,6 +80,36 @@
             </div>
             <span class="card-arrow">→</span>
           </button>
+
+          <button class="dungeon-card deltras-easy-card" data-filter="델트라스 쉬움" style="--bg:url('assets/dungeons/deltras.png')">
+            <div class="card-overlay"></div>
+            <div class="card-content">
+              <span class="difficulty deltras-easy">쉬움</span>
+              <h2>델트라스</h2>
+              <p><b id="count-deltras-easy">0</b>건 모집 중</p>
+            </div>
+            <span class="card-arrow">→</span>
+          </button>
+
+          <button class="dungeon-card deltras-normal-card" data-filter="델트라스 보통" style="--bg:url('assets/dungeons/deltras.png')">
+            <div class="card-overlay"></div>
+            <div class="card-content">
+              <span class="difficulty deltras-normal">보통</span>
+              <h2>델트라스</h2>
+              <p><b id="count-deltras-normal">0</b>건 모집 중</p>
+            </div>
+            <span class="card-arrow">→</span>
+          </button>
+
+          <button class="dungeon-card deltras-hard-card" data-filter="델트라스 어려움" style="--bg:url('assets/dungeons/deltras.png')">
+            <div class="card-overlay"></div>
+            <div class="card-content">
+              <span class="difficulty deltras-hard">어려움</span>
+              <h2>델트라스</h2>
+              <p><b id="count-deltras-hard">0</b>건 모집 중</p>
+            </div>
+            <span class="card-arrow">→</span>
+          </button>
         </section>
 
         <section class="dashboard-grid home-main-grid">
@@ -90,6 +120,10 @@
                 <p id="recruit-panel-desc">참여할 파티를 선택하세요.</p>
               </div>
               <div class="recruit-head-controls">
+                <div class="recruit-sort-tabs" aria-label="날짜 정렬">
+                  <button class="recruit-sort-tab active" data-recruit-sort="asc" title="가까운 날짜부터 보기">오름차순</button>
+                  <button class="recruit-sort-tab" data-recruit-sort="desc" title="늦은 날짜부터 보기">내림차순</button>
+                </div>
                 <div class="recruit-status-tabs" aria-label="모집 상태">
                   <button class="recruit-status-tab active" data-recruit-status="active">모집 중</button>
                   <button class="recruit-status-tab" data-recruit-status="completed">완료</button>
@@ -99,6 +133,9 @@
                   <button class="filter" data-filter="침식">침식</button>
                   <button class="filter" data-filter="무스펠 보통">무스펠 보통</button>
                   <button class="filter" data-filter="무스펠 어려움">무스펠 어려움</button>
+                  <button class="filter" data-filter="델트라스 쉬움">델트라스 쉬움</button>
+                  <button class="filter" data-filter="델트라스 보통">델트라스 보통</button>
+                  <button class="filter" data-filter="델트라스 어려움">델트라스 어려움</button>
                 </div>
               </div>
             </div>

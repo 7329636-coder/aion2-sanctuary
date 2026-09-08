@@ -42,6 +42,7 @@ const state = {
   selectedRecruit: null,
   currentView: 'recruit',
   recruitStatus: 'active',
+  recruitSort: 'asc',
 };
 
 let CURRENT_OWNER_ID = null;
@@ -357,13 +358,24 @@ function renderRecruits() {
   const list = document.querySelector('#recruit-list');
   const now = Date.now();
   const statusRows = state.recruits.filter(r => state.recruitStatus === 'completed' ? isRecruitCompleted(r, now) : !isRecruitCompleted(r, now));
-  const rows = state.filter === '전체' ? statusRows : statusRows.filter(r => r.dungeon === state.filter);
+  const filteredRows = state.filter === '전체' ? statusRows : statusRows.filter(r => r.dungeon === state.filter);
+  const rows = [...filteredRows].sort((a, b) => {
+    const aTime = getRecruitScheduledAt(a);
+    const bTime = getRecruitScheduledAt(b);
+
+    if (aTime == null && bTime == null) return 0;
+    if (aTime == null) return 1;
+    if (bTime == null) return -1;
+
+    return state.recruitSort === 'desc' ? bTime - aTime : aTime - bTime;
+  });
 
   const title = document.querySelector('#recruit-panel-title');
   const desc = document.querySelector('#recruit-panel-desc');
   if (title) title.textContent = state.recruitStatus === 'completed' ? '완료' : '현재 모집 중';
   if (desc) desc.textContent = state.recruitStatus === 'completed' ? '완료된 모집은 7일 동안 보관되며, 파티 구성은 버튼을 눌러 확인할 수 있습니다.' : '참여할 파티를 선택하세요.';
   document.querySelectorAll('[data-recruit-status]').forEach(btn => btn.classList.toggle('active', btn.dataset.recruitStatus === state.recruitStatus));
+  document.querySelectorAll('[data-recruit-sort]').forEach(btn => btn.classList.toggle('active', btn.dataset.recruitSort === state.recruitSort));
 
   if (!rows.length) {
     if (state.recruitStatus === 'completed') {
@@ -722,6 +734,11 @@ document.querySelectorAll('.dungeon-card').forEach(btn => btn.addEventListener('
 }));
 document.querySelectorAll('[data-recruit-status]').forEach(btn => btn.addEventListener('click', () => {
   state.recruitStatus = btn.dataset.recruitStatus;
+  renderRecruits();
+}));
+
+document.querySelectorAll('[data-recruit-sort]').forEach(btn => btn.addEventListener('click', () => {
+  state.recruitSort = btn.dataset.recruitSort;
   renderRecruits();
 }));
 
