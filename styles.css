@@ -2350,3 +2350,122 @@ body::before { display: none; }
   .dungeon-grid { grid-template-columns: 1fr !important; }
   .dungeon-grid .dungeon-card { height: 185px !important; }
 }
+
+
+/* 2026-09 모집 상단 완전 2줄 구조 - 제목 세로 깨짐 방지 */
+.recruit-panel .recruit-panel-head {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin-bottom: 20px !important;
+}
+
+.recruit-panel .recruit-head-row {
+  width: 100% !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+}
+
+.recruit-panel .recruit-heading-copy {
+  flex: 0 0 235px !important;
+  width: 235px !important;
+  min-width: 235px !important;
+  max-width: 235px !important;
+}
+
+.recruit-panel .recruit-heading-copy #recruit-panel-title {
+  display: block !important;
+  width: auto !important;
+  min-width: 0 !important;
+  margin: 0 0 5px !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  writing-mode: horizontal-tb !important;
+}
+
+.recruit-panel .recruit-heading-copy #recruit-panel-desc {
+  display: block !important;
+  width: auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  writing-mode: horizontal-tb !important;
+}
+
+.recruit-panel .recruit-top-tools {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+  min-width: max-content !important;
+}
+
+.recruit-panel .recruit-panel-head > .filters {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin-top: 14px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  white-space: normal !important;
+  overflow: visible !important;
+}
+
+.recruit-panel .recruit-panel-head > .filters .filter {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+/* 왼쪽 모집칸이 조금 좁아지면 버튼만 다음 줄로 내려가고 제목은 가로 유지 */
+@media (max-width: 1180px) {
+  .recruit-panel .recruit-head-row {
+    flex-wrap: wrap !important;
+  }
+
+  .recruit-panel .recruit-heading-copy {
+    flex-basis: 235px !important;
+  }
+
+  .recruit-panel .recruit-top-tools {
+    margin-left: auto !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .recruit-panel .recruit-head-row {
+    display: block !important;
+  }
+
+  .recruit-panel .recruit-heading-copy {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+
+  .recruit-panel .recruit-heading-copy #recruit-panel-desc {
+    white-space: normal !important;
+  }
+
+  .recruit-panel .recruit-top-tools {
+    margin-top: 12px !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    min-width: 0 !important;
+  }
+
+  .recruit-panel .recruit-panel-head > .filters {
+    margin-top: 12px !important;
+  }
+}
