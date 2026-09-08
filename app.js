@@ -16,6 +16,9 @@ const DUNGEON_IMAGE = {
   '침식': 'assets/dungeons/erosion.jpg',
   '무스펠 보통': 'assets/dungeons/muspel.jpg',
   '무스펠 어려움': 'assets/dungeons/muspel.jpg',
+  '델트라스 쉬움': 'assets/dungeons/deltras.png',
+  '델트라스 보통': 'assets/dungeons/deltras.png',
+  '델트라스 어려움': 'assets/dungeons/deltras.png',
 };
 
 const STORAGE = {
@@ -347,6 +350,9 @@ function renderCounts() {
     'count-erosion': count('침식'),
     'count-muspel-normal': count('무스펠 보통'),
     'count-muspel-hard': count('무스펠 어려움'),
+    'count-deltras-easy': count('델트라스 쉬움'),
+    'count-deltras-normal': count('델트라스 보통'),
+    'count-deltras-hard': count('델트라스 어려움'),
   };
   Object.entries(values).forEach(([id, value]) => {
     const el = document.getElementById(id);
@@ -659,6 +665,9 @@ function getRecruitThemeClass(dungeon) {
   if (dungeon === '침식') return 'theme-erosion';
   if (dungeon === '무스펠 보통') return 'theme-muspel-normal';
   if (dungeon === '무스펠 어려움') return 'theme-muspel-hard';
+  if (dungeon === '델트라스 쉬움') return 'theme-deltras-easy';
+  if (dungeon === '델트라스 보통') return 'theme-deltras-normal';
+  if (dungeon === '델트라스 어려움') return 'theme-deltras-hard';
   return '';
 }
 
@@ -1152,7 +1161,7 @@ function openMemoEditModal(recruitId) {
 }
 
 function openRecruitModal() {
-  const dungeonOptions = ['침식','무스펠 보통','무스펠 어려움'].map(d => `<option value="${d}">${d}</option>`).join('');
+  const dungeonOptions = ['침식','무스펠 보통','무스펠 어려움','델트라스 쉬움','델트라스 보통','델트라스 어려움'].map(d => `<option value="${d}">${d}</option>`).join('');
   const hourOptions = ['<option value="">시</option>'];
   for (let hour = 1; hour <= 24; hour++) {
     const hh = String(hour).padStart(2, '0');

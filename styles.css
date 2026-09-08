@@ -2246,47 +2246,107 @@ body::before { display: none; }
 }
 
 
-
-/* 델트라스 추가 */
-.deltras-easy-card {
-  border: 2px solid rgba(122, 201, 102, .92) !important;
-  box-shadow: 0 10px 28px rgba(74, 132, 60, .16);
+/* 2026-09 델트라스 3종 + 안전한 홈 레이아웃 */
+.dungeon-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 16px !important;
 }
-.deltras-easy-card .card-overlay {
-  background: linear-gradient(180deg, rgba(36,64,24,.05) 0%, rgba(55,95,39,.22) 50%, rgba(21,45,17,.92) 100%);
+.dungeon-grid .dungeon-card {
+  min-width: 0 !important;
+  height: 205px !important;
 }
-.deltras-easy-card .difficulty {
-  background: rgba(122, 201, 102, .18);
-  color: #d6f0cb;
-  border-color: rgba(122, 201, 102, .42);
+.dungeon-grid .dungeon-card:nth-child(n) {
+  background-position: center 42% !important;
 }
-
-.deltras-normal-card {
-  border: 2px solid rgba(145, 124, 255, .92) !important;
-  box-shadow: 0 10px 28px rgba(95, 72, 190, .16);
-}
-.deltras-normal-card .card-overlay {
-  background: linear-gradient(180deg, rgba(38,28,70,.05) 0%, rgba(69,46,128,.25) 50%, rgba(31,20,64,.93) 100%);
-}
-.deltras-normal-card .difficulty {
-  background: rgba(145, 124, 255, .18);
-  color: #e4ddff;
-  border-color: rgba(145, 124, 255, .42);
+.dungeon-grid .deltras-easy-card,
+.dungeon-grid .deltras-normal-card,
+.dungeon-grid .deltras-hard-card {
+  background-position: 58% 35% !important;
 }
 
-.deltras-hard-card {
-  border: 2px solid rgba(255, 177, 92, .95) !important;
-  box-shadow: 0 10px 28px rgba(185, 117, 40, .17);
+.deltras-easy-card { border: 2px solid #78c9c8 !important; }
+.deltras-normal-card { border: 2px solid #7aa8e8 !important; }
+.deltras-hard-card { border: 2px solid #9a86d8 !important; }
+.deltras-easy-card .card-overlay { background: linear-gradient(180deg, rgba(24,65,66,.05), rgba(25,83,84,.22) 50%, rgba(13,46,48,.92)); }
+.deltras-normal-card .card-overlay { background: linear-gradient(180deg, rgba(20,43,75,.05), rgba(36,73,119,.24) 50%, rgba(18,38,67,.92)); }
+.deltras-hard-card .card-overlay { background: linear-gradient(180deg, rgba(44,34,76,.05), rgba(74,56,123,.24) 50%, rgba(35,26,65,.93)); }
+.deltras-easy-card .difficulty.easy { color: #c8f1ef; border-color: rgba(120,201,200,.55); }
+.deltras-normal-card .difficulty.normal { color: #cfe2ff; border-color: rgba(122,168,232,.58); }
+.deltras-hard-card .difficulty.hard { color: #e4dbff; border-color: rgba(154,134,216,.58); }
+
+/* 모집 제목/정렬/상태/필터를 2줄 구조로 고정해서 글자 세로 깨짐 방지 */
+.recruit-panel-head {
+  display: grid !important;
+  grid-template-columns: minmax(180px, 1fr) auto !important;
+  align-items: start !important;
+  gap: 12px 16px !important;
+  width: 100% !important;
 }
-.deltras-hard-card .card-overlay {
-  background: linear-gradient(180deg, rgba(72,44,18,.04) 0%, rgba(128,79,29,.22) 50%, rgba(61,34,13,.92) 100%);
+.recruit-heading-copy {
+  min-width: 180px !important;
+  width: auto !important;
 }
-.deltras-hard-card .difficulty {
-  background: rgba(255, 177, 92, .18);
-  color: #ffe9cd;
-  border-color: rgba(255, 177, 92, .45);
+.recruit-heading-copy h3,
+.recruit-heading-copy p {
+  white-space: normal !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+}
+.recruit-top-tools {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+}
+.recruit-panel-head > .filters {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-start !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+}
+.recruit-panel-head .filter {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
 }
 
-.theme-deltras-easy { border-left: 4px solid #7ac966; }
-.theme-deltras-normal { border-left: 4px solid #917cff; }
-.theme-deltras-hard { border-left: 4px solid #ffb15c; }
+.theme-deltras-easy {
+  --theme-border: #78c9c8;
+  --theme-soft: #f0fbfb;
+  --theme-text: #377f80;
+}
+.theme-deltras-normal {
+  --theme-border: #7aa8e8;
+  --theme-soft: #f2f7fd;
+  --theme-text: #3e70aa;
+}
+.theme-deltras-hard {
+  --theme-border: #9a86d8;
+  --theme-soft: #f7f4fd;
+  --theme-text: #6551a8;
+}
+.simple-recruit-item.white-recruit-item.theme-deltras-easy,
+.simple-recruit-item.white-recruit-item.theme-deltras-normal,
+.simple-recruit-item.white-recruit-item.theme-deltras-hard,
+.completed-card.theme-deltras-easy,
+.completed-card.theme-deltras-normal,
+.completed-card.theme-deltras-hard {
+  border: 2px solid var(--theme-border) !important;
+  border-left-width: 2px !important;
+}
+
+@media (max-width: 1000px) {
+  .dungeon-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .recruit-panel-head { grid-template-columns: 1fr !important; }
+  .recruit-top-tools { justify-content: flex-start !important; flex-wrap: wrap !important; }
+  .recruit-panel-head > .filters { grid-column: 1 !important; }
+}
+@media (max-width: 620px) {
+  .dungeon-grid { grid-template-columns: 1fr !important; }
+  .dungeon-grid .dungeon-card { height: 185px !important; }
+}
