@@ -1653,3 +1653,640 @@ body::before { display: none; }
   .activity-wide-panel .activity-list { grid-template-columns: 1fr; }
   .usage-guide-panel { padding: 17px 16px; }
 }
+
+
+/* 2026-08 사용 방법을 상단 메뉴 팝업으로 이동 */
+.home-top-stack {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.usage-help-tab {
+  color: #356fa9 !important;
+  font-weight: 800;
+}
+.usage-help-tab:hover {
+  color: #245f98 !important;
+  background: #f1f6fb !important;
+}
+
+.usage-guide-modal {
+  width: min(590px, calc(100vw - 32px)) !important;
+  background: #ffffff !important;
+  color: #1f2937 !important;
+  border: 1px solid #dfe6ee !important;
+  box-shadow: 0 28px 72px rgba(15, 23, 42, .18) !important;
+}
+.usage-guide-modal h2 {
+  margin-bottom: 6px !important;
+}
+.usage-guide-modal .modal-desc {
+  margin-bottom: 18px !important;
+}
+.usage-modal-steps {
+  display: grid;
+  gap: 4px;
+  padding: 4px 0 2px;
+}
+.usage-guide-modal .usage-step {
+  padding: 10px 0;
+}
+.usage-guide-modal .usage-step > span {
+  background: #5b8bc8;
+}
+.usage-guide-modal .usage-step strong {
+  color: #263b55;
+  font-size: 15px;
+}
+.usage-guide-modal .usage-step p {
+  color: #677b92;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.usage-guide-modal .usage-tip {
+  margin-top: 14px;
+  background: #f5f9ff;
+  border-color: #d8e6f6;
+}
+.usage-guide-actions {
+  margin-top: 18px !important;
+}
+.usage-guide-actions .primary-btn {
+  min-width: 88px;
+}
+
+@media (max-width: 760px) {
+  .usage-help-tab {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+  .usage-guide-modal {
+    padding: 22px 18px !important;
+  }
+}
+
+/* v15 이전 홈 비율: 왼쪽 자동 확장 + 오른쪽 360px */
+.home-main-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 360px !important;
+  gap: 22px !important;
+  align-items: start !important;
+}
+
+.home-main-grid > .recruit-panel {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  min-width: 0;
+}
+
+.home-character-column {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  display: block !important;
+  min-width: 0;
+}
+
+.home-character-column .home-character-panel {
+  width: 100%;
+}
+
+.home-main-grid > .activity-wide-panel {
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  width: 100%;
+}
+
+@media (max-width: 1080px) {
+  .home-main-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .home-main-grid > .recruit-panel,
+  .home-character-column,
+  .home-main-grid > .activity-wide-panel {
+    grid-column: 1 !important;
+  }
+
+  .home-main-grid > .recruit-panel { grid-row: 1 !important; }
+  .home-character-column { grid-row: 2 !important; }
+  .home-main-grid > .activity-wide-panel { grid-row: 3 !important; }
+}
+
+
+/* =========================================================
+   홈 레이아웃 최종: 현재 모집 중 : 내 캐릭터 = 2 : 1
+   최근 활동 = 두 영역 아래 전체 너비
+   ========================================================= */
+.home-main-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr) !important;
+  gap: 20px !important;
+  align-items: start !important;
+}
+
+.home-main-grid > .recruit-panel {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  min-width: 0 !important;
+}
+
+.home-character-column {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  min-width: 0 !important;
+  display: block !important;
+}
+
+.home-main-grid > .activity-wide-panel {
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+
+/* =========================================================
+   모집 카드: 글자/참여 목록/버튼 겹침 방지
+   1행: 성역+날짜시간 / 현재인원 / 버튼
+   2행: 메모(왼쪽+가운데 폭 사용) / 버튼 유지
+   ========================================================= */
+.home-main-grid .simple-recruit-item.white-recruit-item {
+  display: grid !important;
+  grid-template-columns: minmax(330px, 1fr) minmax(112px, auto) 116px !important;
+  grid-template-areas:
+    "title meta actions"
+    "note  note actions" !important;
+  gap: 10px 14px !important;
+  align-items: center !important;
+  padding: 16px 18px !important;
+  min-width: 0 !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-title {
+  grid-area: title !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-title > div {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-meta {
+  grid-area: meta !important;
+  min-width: 112px !important;
+  display: grid !important;
+  gap: 4px !important;
+  align-content: center !important;
+  justify-items: start !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-meta .label,
+.home-main-grid .simple-recruit-item .recruit-meta strong {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+.home-main-grid .simple-recruit-item .participant-preview-btn {
+  width: auto !important;
+  max-width: none !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  flex: 0 0 auto !important;
+  padding: 7px 10px !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-note-block {
+  grid-area: note !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 9px 11px !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-note-text {
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: keep-all !important;
+}
+
+.home-main-grid .simple-recruit-item .recruit-action-stack {
+  grid-area: actions !important;
+  min-width: 116px !important;
+  width: 116px !important;
+  align-self: stretch !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+.home-main-grid .simple-recruit-item .clean-action-btn,
+.home-main-grid .simple-recruit-item .delete-recruit-btn {
+  width: 116px !important;
+  min-width: 116px !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+
+/* 날짜 + 시간 배지는 가능하면 한 줄 유지 */
+.home-main-grid .recruit-schedule-row {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  max-width: 100% !important;
+}
+
+.home-main-grid .schedule-badge {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+.home-main-grid .schedule-time strong {
+  white-space: nowrap !important;
+}
+
+.home-main-grid .schedule-time small {
+  white-space: nowrap !important;
+}
+
+
+/* 내 캐릭터 글자 보호 */
+.home-character-column .panel-head {
+  min-width: 0 !important;
+}
+
+.home-character-column .character-row {
+  min-width: 0 !important;
+}
+
+.home-character-column .char-copy {
+  min-width: 0 !important;
+}
+
+.home-character-column .char-name,
+.home-character-column .char-class {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+
+/* 중간 폭에서는 날짜/시간만 자연스럽게 줄바꿈.
+   글자 자체는 잘리거나 세로로 깨지지 않게 유지 */
+@media (max-width: 1260px) {
+  .home-main-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr) !important;
+  }
+
+  .home-main-grid .simple-recruit-item.white-recruit-item {
+    grid-template-columns: minmax(280px, 1fr) minmax(108px, auto) 110px !important;
+  }
+
+  .home-main-grid .recruit-schedule-row {
+    flex-wrap: wrap !important;
+  }
+
+  .home-main-grid .simple-recruit-item .recruit-action-stack,
+  .home-main-grid .simple-recruit-item .clean-action-btn,
+  .home-main-grid .simple-recruit-item .delete-recruit-btn {
+    width: 110px !important;
+    min-width: 110px !important;
+  }
+}
+
+
+/* 화면이 더 좁으면 2:1을 억지로 유지하지 않고 세로 배치 */
+@media (max-width: 1020px) {
+  .home-main-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .home-main-grid > .recruit-panel {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+
+  .home-character-column {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+  }
+
+  .home-main-grid > .activity-wide-panel {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+  }
+}
+
+
+/* 모바일에서는 모집 카드도 한 칸씩 */
+@media (max-width: 760px) {
+  .home-main-grid .simple-recruit-item.white-recruit-item {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "title"
+      "meta"
+      "note"
+      "actions" !important;
+  }
+
+  .home-main-grid .simple-recruit-item .recruit-action-stack {
+    width: 100% !important;
+    min-width: 0 !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .home-main-grid .simple-recruit-item .clean-action-btn,
+  .home-main-grid .simple-recruit-item .delete-recruit-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .home-main-grid .recruit-schedule-row {
+    flex-wrap: wrap !important;
+  }
+}
+
+
+/* =========================================================
+   홈 최종 배치
+   왼쪽: 현재 모집 중 (2)
+   오른쪽: 내 캐릭터 + 최근 활동 세로 스택 (1)
+   왼쪽 높이 = 오른쪽 두 패널을 합친 전체 높이
+   ========================================================= */
+.home-main-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr) !important;
+  grid-template-rows: auto !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+}
+
+.home-main-grid > .recruit-panel {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  min-width: 0 !important;
+  height: 100% !important;
+}
+
+.home-right-stack {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  gap: 18px !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  align-self: stretch !important;
+  margin: 0 !important;
+}
+
+.home-right-stack .home-character-panel,
+.home-right-stack .home-activity-panel {
+  min-width: 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.home-right-stack .home-activity-panel {
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.home-right-stack .home-activity-panel .activity-list {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+}
+
+/* 이전 '최근 활동 전체 너비' 배치 무효화 */
+.home-main-grid > .activity-wide-panel {
+  display: none !important;
+}
+
+/* 오른쪽 카드 안 글자 보호 */
+.home-right-stack .panel-head,
+.home-right-stack .character-row,
+.home-right-stack .activity-item {
+  min-width: 0 !important;
+}
+
+.home-right-stack .char-copy,
+.home-right-stack .activity-copy {
+  min-width: 0 !important;
+}
+
+.home-right-stack .char-name,
+.home-right-stack .char-class,
+.home-right-stack .activity-copy strong,
+.home-right-stack .activity-copy span {
+  overflow-wrap: anywhere !important;
+  word-break: keep-all !important;
+}
+
+/* 중간 폭 */
+@media (max-width: 1180px) {
+  .home-main-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr) !important;
+  }
+}
+
+/* 좁은 화면에서는 세로 배치 */
+@media (max-width: 1020px) {
+  .home-main-grid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto !important;
+  }
+
+  .home-main-grid > .recruit-panel {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    height: auto !important;
+  }
+
+  .home-right-stack {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    height: auto !important;
+    grid-template-rows: auto auto !important;
+  }
+
+  .home-right-stack .home-activity-panel {
+    min-height: 180px !important;
+  }
+}
+
+
+/* 메모 수정 */
+.memo-edit-btn {
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid #d8e3ee;
+  background: #ffffff;
+  color: #537394;
+  cursor: pointer;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.memo-edit-btn:hover {
+  background: #f5f9fd;
+  border-color: #c8d8e8;
+}
+.memo-edit-modal {
+  background: #ffffff !important;
+  color: #1f2937 !important;
+  border: 1px solid #dfe6ee !important;
+  box-shadow: 0 26px 68px rgba(15,23,42,.18) !important;
+}
+.memo-edit-modal .modal-desc {
+  color: #6f7d8b !important;
+}
+.memo-edit-modal .field label {
+  color: #394554 !important;
+}
+.memo-edit-modal textarea {
+  width: 100% !important;
+  min-height: 130px !important;
+  background: #ffffff !important;
+  color: #17202a !important;
+  border: 1px solid #cfd6de !important;
+  border-radius: 10px !important;
+  padding: 12px 13px !important;
+  font: inherit !important;
+  line-height: 1.55 !important;
+  resize: vertical !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+.memo-edit-modal textarea:focus {
+  border-color: #4c82b8 !important;
+  box-shadow: 0 0 0 3px rgba(76,130,184,.12) !important;
+}
+.memo-edit-modal .memo-count {
+  color: #97a2ae !important;
+}
+
+
+/* 캐릭터 수정 */
+.character-edit-btn {
+  color: #4f7398 !important;
+  border-color: #d3e0ec !important;
+  background: #ffffff !important;
+}
+.character-edit-btn:hover {
+  background: #f5f9fd !important;
+  border-color: #c4d6e7 !important;
+}
+
+.character-edit-modal {
+  background: #ffffff !important;
+  color: #1f2937 !important;
+  border: 1px solid #dfe6ee !important;
+  box-shadow: 0 26px 68px rgba(15,23,42,.18) !important;
+}
+
+
+/* 모집 목록 날짜 정렬 - 모집 중/완료보다 작은 버튼 */
+.recruit-sort-tabs {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid #e1e7ee;
+  border-radius: 10px;
+  background: #fafbfd;
+  flex: 0 0 auto;
+}
+
+.recruit-sort-tab {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #7a8795;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.recruit-sort-tab:hover {
+  background: #f1f5f9;
+  color: #58718b;
+}
+
+.recruit-sort-tab.active {
+  background: #ffffff;
+  color: #4e77a1;
+  box-shadow: 0 1px 4px rgba(15,23,42,.08);
+}
+
+/* 상단 컨트롤이 좁아져도 겹치지 않게 */
+.recruit-head-controls {
+  row-gap: 8px !important;
+}
+
+@media (max-width: 760px) {
+  .recruit-sort-tab {
+    min-height: 27px;
+    padding: 0 8px;
+    font-size: 10.5px;
+  }
+}
+
+
+
+/* 델트라스 추가 */
+.deltras-easy-card {
+  border: 2px solid rgba(122, 201, 102, .92) !important;
+  box-shadow: 0 10px 28px rgba(74, 132, 60, .16);
+}
+.deltras-easy-card .card-overlay {
+  background: linear-gradient(180deg, rgba(36,64,24,.05) 0%, rgba(55,95,39,.22) 50%, rgba(21,45,17,.92) 100%);
+}
+.deltras-easy-card .difficulty {
+  background: rgba(122, 201, 102, .18);
+  color: #d6f0cb;
+  border-color: rgba(122, 201, 102, .42);
+}
+
+.deltras-normal-card {
+  border: 2px solid rgba(145, 124, 255, .92) !important;
+  box-shadow: 0 10px 28px rgba(95, 72, 190, .16);
+}
+.deltras-normal-card .card-overlay {
+  background: linear-gradient(180deg, rgba(38,28,70,.05) 0%, rgba(69,46,128,.25) 50%, rgba(31,20,64,.93) 100%);
+}
+.deltras-normal-card .difficulty {
+  background: rgba(145, 124, 255, .18);
+  color: #e4ddff;
+  border-color: rgba(145, 124, 255, .42);
+}
+
+.deltras-hard-card {
+  border: 2px solid rgba(255, 177, 92, .95) !important;
+  box-shadow: 0 10px 28px rgba(185, 117, 40, .17);
+}
+.deltras-hard-card .card-overlay {
+  background: linear-gradient(180deg, rgba(72,44,18,.04) 0%, rgba(128,79,29,.22) 50%, rgba(61,34,13,.92) 100%);
+}
+.deltras-hard-card .difficulty {
+  background: rgba(255, 177, 92, .18);
+  color: #ffe9cd;
+  border-color: rgba(255, 177, 92, .45);
+}
+
+.theme-deltras-easy { border-left: 4px solid #7ac966; }
+.theme-deltras-normal { border-left: 4px solid #917cff; }
+.theme-deltras-hard { border-left: 4px solid #ffb15c; }

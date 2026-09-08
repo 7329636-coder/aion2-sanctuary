@@ -21,6 +21,7 @@
         <button class="nav-tab active" data-view="recruit">성역 모집</button>
         <button class="nav-tab" data-view="characters">내 캐릭터</button>
         <button class="nav-tab" data-view="applications">내 신청</button>
+        <button class="nav-tab usage-help-tab" id="usage-help-btn" type="button">사용 방법</button>
       </nav>
 
       <div class="top-actions">
@@ -79,10 +80,69 @@
             </div>
             <span class="card-arrow">→</span>
           </button>
+
+          <button class="dungeon-card deltras-easy-card" data-filter="델트라스 쉬움" style="--bg:url('assets/dungeons/deltras.png')">
+            <div class="card-overlay"></div>
+            <div class="card-content">
+              <span class="difficulty deltras-easy">쉬움</span>
+              <h2>델트라스</h2>
+              <p><b id="count-deltras-easy">0</b>건 모집 중</p>
+            </div>
+            <span class="card-arrow">→</span>
+          </button>
+
+          <button class="dungeon-card deltras-normal-card" data-filter="델트라스 보통" style="--bg:url('assets/dungeons/deltras.png')">
+            <div class="card-overlay"></div>
+            <div class="card-content">
+              <span class="difficulty deltras-normal">보통</span>
+              <h2>델트라스</h2>
+              <p><b id="count-deltras-normal">0</b>건 모집 중</p>
+            </div>
+            <span class="card-arrow">→</span>
+          </button>
+
+          <button class="dungeon-card deltras-hard-card" data-filter="델트라스 어려움" style="--bg:url('assets/dungeons/deltras.png')">
+            <div class="card-overlay"></div>
+            <div class="card-content">
+              <span class="difficulty deltras-hard">어려움</span>
+              <h2>델트라스</h2>
+              <p><b id="count-deltras-hard">0</b>건 모집 중</p>
+            </div>
+            <span class="card-arrow">→</span>
+          </button>
         </section>
 
-        <section class="dashboard-grid">
-          <aside class="side-stack home-top-stack">
+        <section class="dashboard-grid home-main-grid">
+          <div class="panel recruit-panel">
+            <div class="panel-head recruit-panel-head">
+              <div>
+                <h3 id="recruit-panel-title">현재 모집 중</h3>
+                <p id="recruit-panel-desc">참여할 파티를 선택하세요.</p>
+              </div>
+              <div class="recruit-head-controls">
+                <div class="recruit-sort-tabs" aria-label="날짜 정렬">
+                  <button class="recruit-sort-tab active" data-recruit-sort="asc" title="가까운 날짜부터 보기">오름차순</button>
+                  <button class="recruit-sort-tab" data-recruit-sort="desc" title="늦은 날짜부터 보기">내림차순</button>
+                </div>
+                <div class="recruit-status-tabs" aria-label="모집 상태">
+                  <button class="recruit-status-tab active" data-recruit-status="active">모집 중</button>
+                  <button class="recruit-status-tab" data-recruit-status="completed">완료</button>
+                </div>
+                <div class="filters" id="filters">
+                  <button class="filter active" data-filter="전체">전체</button>
+                  <button class="filter" data-filter="침식">침식</button>
+                  <button class="filter" data-filter="무스펠 보통">무스펠 보통</button>
+                  <button class="filter" data-filter="무스펠 어려움">무스펠 어려움</button>
+                  <button class="filter" data-filter="델트라스 쉬움">델트라스 쉬움</button>
+                  <button class="filter" data-filter="델트라스 보통">델트라스 보통</button>
+                  <button class="filter" data-filter="델트라스 어려움">델트라스 어려움</button>
+                </div>
+              </div>
+            </div>
+            <div id="recruit-list" class="recruit-list"></div>
+          </div>
+
+          <aside class="side-stack home-right-stack">
             <div class="panel side-panel home-character-panel">
               <div class="panel-head compact">
                 <div>
@@ -95,47 +155,16 @@
               <button class="outline-btn full" id="add-character">+ 캐릭터 추가</button>
             </div>
 
-            <div class="usage-guide-panel" aria-label="성역 모집 사용방법">
-              <div class="usage-guide-title"><span class="usage-guide-icon">i</span><div><strong>처음 이용하시나요?</strong><span>성역 모집 이용방법</span></div></div>
-              <div class="usage-step"><span>1</span><div><strong>캐릭터 등록</strong><p>먼저 + 캐릭터 추가에서 캐릭터를 등록해주세요.</p></div></div>
-              <div class="usage-step"><span>2</span><div><strong>모집 참여</strong><p>원하는 성역 모집에서 참여할 캐릭터를 선택해주세요.</p></div></div>
-              <div class="usage-step"><span>3</span><div><strong>모집 만들기</strong><p>날짜와 시간을 선택해 직접 모집을 만들 수 있습니다.</p></div></div>
-              <div class="usage-step"><span>4</span><div><strong>참여 목록 확인</strong><p>참여 인원과 1파티 / 2파티 구성을 확인할 수 있습니다.</p></div></div>
-              <div class="usage-tip"><strong>TIP</strong><span>부캐릭터로 참여하면 대표 캐릭터명이 함께 표시됩니다. 예: 뚀봉 (쇼봉)</span></div>
+            <div class="panel side-panel home-activity-panel">
+              <div class="panel-head compact">
+                <div>
+                  <h3>최근 활동</h3>
+                  <p>신청·취소 기록</p>
+                </div>
+              </div>
+              <div id="activity-list" class="activity-list"></div>
             </div>
           </aside>
-
-          <div class="panel recruit-panel">
-            <div class="panel-head recruit-panel-head">
-              <div>
-                <h3 id="recruit-panel-title">현재 모집 중</h3>
-                <p id="recruit-panel-desc">참여할 파티를 선택하세요.</p>
-              </div>
-              <div class="recruit-head-controls">
-                <div class="recruit-status-tabs" aria-label="모집 상태">
-                  <button class="recruit-status-tab active" data-recruit-status="active">모집 중</button>
-                  <button class="recruit-status-tab" data-recruit-status="completed">완료</button>
-                </div>
-                <div class="filters" id="filters">
-                  <button class="filter active" data-filter="전체">전체</button>
-                  <button class="filter" data-filter="침식">침식</button>
-                  <button class="filter" data-filter="무스펠 보통">무스펠 보통</button>
-                  <button class="filter" data-filter="무스펠 어려움">무스펠 어려움</button>
-                </div>
-              </div>
-            </div>
-            <div id="recruit-list" class="recruit-list"></div>
-          </div>
-
-          <div class="panel side-panel activity-wide-panel">
-            <div class="panel-head compact">
-              <div>
-                <h3>최근 활동</h3>
-                <p>신청·취소 기록</p>
-              </div>
-            </div>
-            <div id="activity-list" class="activity-list"></div>
-          </div>
         </section>
       </section>
 
