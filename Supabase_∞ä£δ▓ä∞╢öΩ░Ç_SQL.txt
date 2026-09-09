@@ -1,0 +1,19 @@
+-- 캐릭터 서버(아리엘/시엘) 항목 추가
+-- Supabase > SQL Editor > New query 에 붙여넣고 Run 한 번만 실행하세요.
+
+alter table public.characters
+  add column if not exists server text not null default '아리엘';
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'characters_server_check'
+      and conrelid = 'public.characters'::regclass
+  ) then
+    alter table public.characters
+      add constraint characters_server_check
+      check (server in ('아리엘', '시엘'));
+  end if;
+end $$;
