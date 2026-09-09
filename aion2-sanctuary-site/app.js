@@ -16,6 +16,9 @@ const DUNGEON_IMAGE = {
   '침식': 'assets/dungeons/erosion.jpg',
   '무스펠 보통': 'assets/dungeons/muspel.jpg',
   '무스펠 어려움': 'assets/dungeons/muspel.jpg',
+  '델트라스 쉬움': 'assets/dungeons/deltras.png',
+  '델트라스 보통': 'assets/dungeons/deltras.png',
+  '델트라스 어려움': 'assets/dungeons/deltras.png',
 };
 
 const STORAGE = {
@@ -347,6 +350,9 @@ function renderCounts() {
     'count-erosion': count('침식'),
     'count-muspel-normal': count('무스펠 보통'),
     'count-muspel-hard': count('무스펠 어려움'),
+    'count-deltras-easy': count('델트라스 쉬움'),
+    'count-deltras-normal': count('델트라스 보통'),
+    'count-deltras-hard': count('델트라스 어려움'),
   };
   Object.entries(values).forEach(([id, value]) => {
     const el = document.getElementById(id);
@@ -376,6 +382,10 @@ function renderRecruits() {
   if (desc) desc.textContent = state.recruitStatus === 'completed' ? '완료된 모집은 7일 동안 보관되며, 파티 구성은 버튼을 눌러 확인할 수 있습니다.' : '참여할 파티를 선택하세요.';
   document.querySelectorAll('[data-recruit-status]').forEach(btn => btn.classList.toggle('active', btn.dataset.recruitStatus === state.recruitStatus));
   document.querySelectorAll('[data-recruit-sort]').forEach(btn => btn.classList.toggle('active', btn.dataset.recruitSort === state.recruitSort));
+  const recruitFilterSelect = document.querySelector('#recruit-filter-select');
+  if (recruitFilterSelect && recruitFilterSelect.value !== state.filter) {
+    recruitFilterSelect.value = state.filter;
+  }
 
   if (!rows.length) {
     if (state.recruitStatus === 'completed') {
@@ -659,6 +669,9 @@ function getRecruitThemeClass(dungeon) {
   if (dungeon === '침식') return 'theme-erosion';
   if (dungeon === '무스펠 보통') return 'theme-muspel-normal';
   if (dungeon === '무스펠 어려움') return 'theme-muspel-hard';
+  if (dungeon === '델트라스 쉬움') return 'theme-deltras-easy';
+  if (dungeon === '델트라스 보통') return 'theme-deltras-normal';
+  if (dungeon === '델트라스 어려움') return 'theme-deltras-hard';
   return '';
 }
 
@@ -722,12 +735,15 @@ async function deleteCharacter(characterId) {
 
 function setFilter(filter) {
   state.filter = filter;
-  document.querySelectorAll('.filter').forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
+  const select = document.querySelector('#recruit-filter-select');
+  if (select && select.value !== filter) select.value = filter;
   renderRecruits();
   document.querySelector('.recruit-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-document.querySelectorAll('.filter').forEach(btn => btn.addEventListener('click', () => setFilter(btn.dataset.filter)));
+document.querySelector('#recruit-filter-select')?.addEventListener('change', e => {
+  setFilter(e.target.value);
+});
 document.querySelectorAll('.dungeon-card').forEach(btn => btn.addEventListener('click', () => {
   state.recruitStatus = 'active';
   setFilter(btn.dataset.filter);
@@ -1152,7 +1168,7 @@ function openMemoEditModal(recruitId) {
 }
 
 function openRecruitModal() {
-  const dungeonOptions = ['침식','무스펠 보통','무스펠 어려움'].map(d => `<option value="${d}">${d}</option>`).join('');
+  const dungeonOptions = ['침식','무스펠 보통','무스펠 어려움','델트라스 쉬움','델트라스 보통','델트라스 어려움'].map(d => `<option value="${d}">${d}</option>`).join('');
   const hourOptions = ['<option value="">시</option>'];
   for (let hour = 1; hour <= 24; hour++) {
     const hh = String(hour).padStart(2, '0');
