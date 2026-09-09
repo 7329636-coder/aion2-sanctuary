@@ -382,6 +382,10 @@ function renderRecruits() {
   if (desc) desc.textContent = state.recruitStatus === 'completed' ? '완료된 모집은 7일 동안 보관되며, 파티 구성은 버튼을 눌러 확인할 수 있습니다.' : '참여할 파티를 선택하세요.';
   document.querySelectorAll('[data-recruit-status]').forEach(btn => btn.classList.toggle('active', btn.dataset.recruitStatus === state.recruitStatus));
   document.querySelectorAll('[data-recruit-sort]').forEach(btn => btn.classList.toggle('active', btn.dataset.recruitSort === state.recruitSort));
+  const recruitFilterSelect = document.querySelector('#recruit-filter-select');
+  if (recruitFilterSelect && recruitFilterSelect.value !== state.filter) {
+    recruitFilterSelect.value = state.filter;
+  }
 
   if (!rows.length) {
     if (state.recruitStatus === 'completed') {
@@ -731,12 +735,15 @@ async function deleteCharacter(characterId) {
 
 function setFilter(filter) {
   state.filter = filter;
-  document.querySelectorAll('.filter').forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
+  const select = document.querySelector('#recruit-filter-select');
+  if (select && select.value !== filter) select.value = filter;
   renderRecruits();
   document.querySelector('.recruit-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-document.querySelectorAll('.filter').forEach(btn => btn.addEventListener('click', () => setFilter(btn.dataset.filter)));
+document.querySelector('#recruit-filter-select')?.addEventListener('change', e => {
+  setFilter(e.target.value);
+});
 document.querySelectorAll('.dungeon-card').forEach(btn => btn.addEventListener('click', () => {
   state.recruitStatus = 'active';
   setFilter(btn.dataset.filter);

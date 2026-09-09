@@ -2469,3 +2469,110 @@ body::before { display: none; }
     margin-top: 12px !important;
   }
 }
+
+
+/* 성역 필터를 드롭다운으로 단순화 */
+.recruit-panel .recruit-panel-head {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.recruit-panel .recruit-heading-copy {
+  flex: 1 1 auto !important;
+  min-width: 220px !important;
+}
+
+.recruit-panel #recruit-panel-title {
+  margin: 0 0 5px !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  writing-mode: horizontal-tb !important;
+}
+
+.recruit-panel #recruit-panel-desc {
+  margin: 0 !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  writing-mode: horizontal-tb !important;
+}
+
+.compact-recruit-controls {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  align-items: flex-start !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+}
+
+.recruit-status-filter-stack {
+  display: grid !important;
+  gap: 7px !important;
+  min-width: 170px !important;
+}
+
+.recruit-filter-select-wrap {
+  display: grid !important;
+  grid-template-columns: auto 1fr !important;
+  align-items: center !important;
+  gap: 7px !important;
+  min-height: 34px !important;
+  padding: 4px 8px !important;
+  border: 1px solid #dce4ed !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+}
+
+.recruit-filter-select-wrap > span {
+  color: #7a8795 !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  white-space: nowrap !important;
+}
+
+#recruit-filter-select {
+  width: 100% !important;
+  min-width: 110px !important;
+  height: 28px !important;
+  border: 0 !important;
+  outline: none !important;
+  background: transparent !important;
+  color: #3f5872 !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+}
+
+@media (max-width: 1180px) {
+  .recruit-panel .recruit-panel-head {
+    flex-wrap: wrap !important;
+  }
+  .compact-recruit-controls {
+    margin-left: auto !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .recruit-panel .recruit-panel-head {
+    display: block !important;
+  }
+
+  .recruit-panel .recruit-heading-copy {
+    min-width: 0 !important;
+  }
+
+  .recruit-panel #recruit-panel-desc {
+    white-space: normal !important;
+  }
+
+  .compact-recruit-controls {
+    margin-top: 12px !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+}
